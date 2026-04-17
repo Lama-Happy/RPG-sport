@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout RPG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0a0e27;
+            --secondary: #1a1f3a;
+            --accent: #ff6b35;
+            --accent-dark: #e55a2b;
+            --text-light: #e8eaed;
+            --text-muted: #9ca3af;
+            --success: #10b981;
+            --border: #2d3748;
+            --font-display: "Space Mono", monospace;
+            --font-body: "Fira Code", monospace;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary) 0%, #0f1433 100%);
+            color: var(--text-light);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            background-attachment: fixed;
+        }
+
+        /* Grille géométrique en arrière-plan */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(255,107,53,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,107,53,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        header {
+            margin-bottom: 40px;
+            text-align: center;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 20px;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--accent);
+            font-family: var(--font-display);
+            text-shadow: 0 4px 20px rgba(255, 107, 53, 0.2);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(26, 31, 58, 0.7);
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 4px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 107, 53, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .stat-card:hover {
+            border-color: var(--accent);
+            background: rgba(26, 31, 58, 0.95);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent);
+            font-family: var(--font-display);
+        }
+
+        /* Progression bar */
+        .progress-section {
+            background: rgba(26, 31, 58, 0.7);
+            border: 1px solid var(--border);
+            padding: 25px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            backdrop-filter: blur(10px);
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+
+        .progress-label strong {
+            color: var(--accent);
+            font-family: var(--font-display);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255, 107, 53, 0.3);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent) 0%, #ff8c42 100%);
+            transition: width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+            position: relative;
+        }
+
+        .progress-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        /* Section des exercices */
+        .workout-section {
+            background: rgba(26, 31, 58, 0.7);
+            border: 1px solid var(--border);
+            padding: 25px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            backdrop-filter: blur(10px);
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 20px;
+            font-family: var(--font-display);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .difficulty-selector {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .diff-btn {
+            padding: 12px;
+            background: var(--secondary);
+            border: 2px solid var(--border);
+            color: var(--text-light);
+            font-family: var(--font-display);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 3px;
+            font-size: 1rem;
+        }
+
+        .diff-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .diff-btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: var(--primary);
+            box-shadow: 0 0 15px rgba(255, 107, 53, 0.5);
+        }
+
+        .exercises-grid {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .exercise-item {
+            background: rgba(15, 20, 51, 0.8);
+            border: 1px solid var(--border);
+            padding: 15px 20px;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .exercise-item:nth-child(1) { animation-delay: 0.05s; }
+        .exercise-item:nth-child(2) { animation-delay: 0.1s; }
+        .exercise-item:nth-child(3) { animation-delay: 0.15s; }
+        .exercise-item:nth-child(4) { animation-delay: 0.2s; }
+        .exercise-item:nth-child(5) { animation-delay: 0.25s; }
+
+        .exercise-name {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .exercise-value {
+            color: var(--accent);
+            font-weight: bold;
+            font-family: var(--font-display);
+        }
+
+        .time-input-group {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--secondary);
+            border: 1px solid var(--border);
+            color: var(--text-light);
+            font-family: var(--font-body);
+            font-size: 1rem;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            font-family: var(--font-display);
+            font-weight: bold;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: var(--primary);
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-dark);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Résultats */
+        .results {
+            background: linear-gradient(135deg, rgba(26, 31, 58, 0.9), rgba(15, 20, 51, 0.9));
+            border: 2px solid var(--accent);
+            padding: 30px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            animation: popIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .results.hidden {
+            display: none;
+        }
+
+        .results-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--success);
+            margin-bottom: 20px;
+            font-family: var(--font-display);
+        }
+
+        .xp-gain {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-bottom: 20px;
+            font-family: var(--font-display);
+        }
+
+        .result-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+        }
+
+        .result-stat:last-child {
+            border-bottom: none;
+        }
+
+        .result-stat strong {
+            color: var(--accent);
+        }
+
+        /* Footer */
+        .data-controls {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            margin-top: 40px;
+        }
+
+        .data-controls p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .stats-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .difficulty-selector {
+                grid-template-columns: repeat(5, 1fr);
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--accent);
+            color: var(--primary);
+            padding: 15px 20px;
+            border-radius: 3px;
+            font-weight: bold;
+            animation: slideUp 0.3s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚡ WORKOUT RPG</h1>
+            <p class="subtitle">Entraîne-toi, gagne de l'XP, débloquer des paliers</p>
+        </header>
+
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-label">Palier Actuel</div>
+                <div class="stat-value" id="currentLevel">1</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">XP Total</div>
+                <div class="stat-value" id="totalXP">0</div>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <div class="progress-label">
+                <strong>Progression Palier</strong>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="progress-label" style="margin-top: 8px; justify-content: flex-end;">
+                <span id="xpProgress">0 / 200 XP</span>
+            </div>
+        </div>
+
+        <div class="workout-section">
+            <div class="section-title">Sélectionne ta Difficulté</div>
+            <div class="difficulty-selector">
+                <button class="diff-btn" data-level="1">1</button>
+                <button class="diff-btn" data-level="2">2</button>
+                <button class="diff-btn" data-level="3">3</button>
+                <button class="diff-btn" data-level="4">4</button>
+                <button class="diff-btn" data-level="5">5</button>
+            </div>
+
+            <div class="section-title">Ta Séance</div>
+            <div class="exercises-grid" id="exercisesGrid">
+                <!-- Généré par JS -->
+            </div>
+
+            <div class="time-input-group">
+                <div class="input-wrapper">
+                    <label class="input-label">Temps (minutes)</label>
+                    <input type="number" id="timeInput" placeholder="0" min="0.1" step="0.1" value="30">
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" id="submitBtn">Valider Séance</button>
+                <button class="btn-secondary" id="generateBtn">Générer Nouveaux Exos</button>
+            </div>
+        </div>
+
+        <div class="results hidden" id="results">
+            <div class="results-title">🎉 Séance Complétée!</div>
+            <div class="xp-gain" id="xpGainDisplay">+0 XP</div>
+            <div class="result-stat">
+                <span>XP Gagné</span>
+                <strong id="xpGainedStat">0</strong>
+            </div>
+            <div class="result-stat">
+                <span>XP Total</span>
+                <strong id="totalXPStat">0</strong>
+            </div>
+            <div class="result-stat">
+                <span>Palier Actuel</span>
+                <strong id="levelStat">1</strong>
+            </div>
+        </div>
+
+        <div class="data-controls">
+            <p>Données stockées localement dans ton navigateur</p>
+            <button class="btn-danger" id="resetBtn">Réinitialiser les Données</button>
+        </div>
+    </div>
+
+    <script>
+        // Données
+        const EXERCISES = {
+            "Pompes": "muscu",
+            "Squats": "muscu",
+            "Fentes": "muscu",
+            "Dips sur chaise": "muscu",
+            "Tractions": "muscu",
+            "Jumping squats": "muscu",
+            "Course": "course",
+            "Chaise": "cardio",
+            "Gainage": "cardio",
+            "Montées de genoux": "cardio",
+            "Burpees": "cardio",
+            "Russian twist": "abdos",
+            "Crunchs": "abdos",
+            "Planche latérale": "abdos",
+            "Mountain climbers": "abdos"
+        };
+
+        const RANGES = {
+            "muscu": [50, 150],
+            "abdos": [50, 150],
+            "cardio": [30, 120],
+            "course": [2.5, 15]
+        };
+
+        const TIME_REF = { 1: 120, 2: 90, 3: 60, 4: 40, 5: 20 };
+
+        // État
+        let state = {
+            level: 1,
+            xpTotal: 0,
+            selectedDifficulty: 1,
+            currentExercises: {}
+        };
+
+        // Initialisation
+        function init() {
+            loadProgress();
+            generateExercises(1);
+            setupEventListeners();
+            updateUI();
+        }
+
+        // Storage
+        function loadProgress() {
+            const saved = localStorage.getItem('workoutProgress');
+            if (saved) {
+                const data = JSON.parse(saved);
+                state.level = data.level;
+                state.xpTotal = data.xpTotal;
+            }
+        }
+
+        function saveProgress() {
+            localStorage.setItem('workoutProgress', JSON.stringify({
+                level: state.level,
+                xpTotal: state.xpTotal
+            }));
+        }
+
+        // Génération d'exos
+        function generateExercises(difficulty) {
+            state.selectedDifficulty = difficulty;
+            const exerciseNames = Object.keys(EXERCISES);
+            const selected = [];
+            for (let i = 0; i < 5; i++) {
+                const idx = Math.floor(Math.random() * exerciseNames.length);
+                selected.push(exerciseNames[idx]);
+            }
+
+            state.currentExercises = {};
+            selected.forEach(exoName => {
+                const exoType = EXERCISES[exoName];
+                const [min, max] = RANGES[exoType];
+                const value = min + (max - min) * (difficulty - 1) / 4;
+
+                if (exoType === "muscu" || exoType === "abdos") {
+                    state.currentExercises[exoName] = `${Math.round(value)} répétitions`;
+                } else if (exoType === "cardio") {
+                    state.currentExercises[exoName] = `${Math.round(value)} secondes`;
+                } else if (exoType === "course") {
+                    state.currentExercises[exoName] = `${(Math.round(value * 10) / 10).toFixed(1)} km`;
+                }
+            });
+
+            renderExercises();
+        }
+
+        function renderExercises() {
+            const grid = document.getElementById('exercisesGrid');
+            grid.innerHTML = Object.entries(state.currentExercises).map(([name, value]) =>
+                `<div class="exercise-item">
+                    <span class="exercise-name">${name}</span>
+                    <span class="exercise-value">${value}</span>
+                </div>`
+            ).join('');
+        }
+
+        // Calcul XP (bug du code original CORRIGÉ)
+        function submitWorkout() {
+            const timeInput = parseFloat(document.getElementById('timeInput').value);
+            if (!timeInput || timeInput <= 0) {
+                showToast('Entre un temps valide');
+                return;
+            }
+
+            const difficulty = state.selectedDifficulty;
+            const timeRef = TIME_REF[difficulty];
+            const xpGained = Math.round(difficulty * 30 * timeRef / Math.max(timeInput, 1));
+
+            // Calcul de progression sans bug
+            let newXpTotal = state.xpTotal + xpGained;
+            let newLevel = state.level;
+            let xpInLevel = 0;
+
+            // Calcul cumul XP jusqu'au palier actuel
+            let cumul = 0;
+            for (let i = 1; i < newLevel; i++) {
+                cumul += 200 + 50 * (i - 1);
+            }
+            xpInLevel = newXpTotal - cumul;
+
+            // Montée de palier
+            let thresholdForNextLevel = 200 + 50 * (newLevel - 1);
+            while (xpInLevel >= thresholdForNextLevel) {
+                xpInLevel -= thresholdForNextLevel;
+                newLevel++;
+                thresholdForNextLevel = 200 + 50 * (newLevel - 1);
+            }
+
+            // Mise à jour état
+            state.level = newLevel;
+            state.xpTotal = newXpTotal;
+            saveProgress();
+
+            // Affichage résultats
+            showResults(xpGained);
+            updateUI();
+            generateExercises(state.selectedDifficulty);
+        }
+
+        function showResults(xpGained) {
+            const resultsDiv = document.getElementById('results');
+            const currentLevelXp = 200 + 50 * (state.level - 1);
+            
+            // Calcul XP dans le palier actuel
+            let cumul = 0;
+            for (let i = 1; i < state.level; i++) {
+                cumul += 200 + 50 * (i - 1);
+            }
+            const xpInLevel = state.xpTotal - cumul;
+
+            document.getElementById('xpGainDisplay').textContent = `+${xpGained} XP`;
+            document.getElementById('xpGainedStat').textContent = xpGained;
+            document.getElementById('totalXPStat').textContent = state.xpTotal;
+            document.getElementById('levelStat').textContent = state.level;
+
+            resultsDiv.classList.remove('hidden');
+        }
+
+        function updateUI() {
+            document.getElementById('currentLevel').textContent = state.level;
+            document.getElementById('totalXP').textContent = state.xpTotal;
+
+            const currentLevelXp = 200 + 50 * (state.level - 1);
+            
+            // Calcul XP du palier actuel
+            let cumul = 0;
+            for (let i = 1; i < state.level; i++) {
+                cumul += 200 + 50 * (i - 1);
+            }
+            const xpInLevel = state.xpTotal - cumul;
+            const progress = Math.max(0, Math.min(1, xpInLevel / currentLevelXp));
+
+            document.getElementById('progressFill').style.width = (progress * 100) + '%';
+            document.getElementById('progressPercent').textContent = Math.round(progress * 100) + '%';
+            document.getElementById('xpProgress').textContent = `${Math.floor(xpInLevel)} / ${currentLevelXp} XP`;
+        }
+
+        function setupEventListeners() {
+            // Difficulty buttons
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    generateExercises(parseInt(e.target.dataset.level));
+                });
+            });
+
+            // Submit
+            document.getElementById('submitBtn').addEventListener('click', submitWorkout);
+
+            // Generate
+            document.getElementById('generateBtn').addEventListener('click', () => {
+                generateExercises(state.selectedDifficulty);
+                document.getElementById('results').classList.add('hidden');
+                showToast('Nouveaux exos générés');
+            });
+
+            // Reset
+            document.getElementById('resetBtn').addEventListener('click', () => {
+                if (confirm('Vraiment réinitialiser ? C\'est irréversible.')) {
+                    localStorage.removeItem('workoutProgress');
+                    state.level = 1;
+                    state.xpTotal = 0;
+                    updateUI();
+                    showToast('Données réinitialisées');
+                }
+            });
+
+            // Set difficulty 1 as default
+            document.querySelector('[data-level="1"]').classList.add('active');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        // Lancement
+        init();
+    </script>
+</body>
+</html>
