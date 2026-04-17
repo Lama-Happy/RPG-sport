@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-deep: #030508;
+            --bg-dark: #060b14;
+            --bg-panel: rgba(8, 12, 28, 0.85);
+            --purple-core: #7b2fff;
+            --purple-glow: #a855f7;
+            --purple-dim: #4c1d95;
+            --blue-ice: #38bdf8;
+            --blue-dim: #0c4a6e;
+            --gold: #fbbf24;
+            --gold-dim: #78350f;
+            --text-bright: #e2e8f0;
+            --text-mid: #94a3b8;
+            --text-dim: #475569;
+            --success: #34d399;
+            --danger: #f87171;
+            --border-faint: rgba(123, 47, 255, 0.2);
+            --border-glow: rgba(123, 47, 255, 0.6);
+            --font-title: 'Cinzel', serif;
+            --font-body: 'Rajdhani', sans-serif;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--text-bright);
+            font-family: var(--font-body);
+            font-size: 16px;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(123,47,255,0.18) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 30% at 90% 90%, rgba(56,189,248,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 30% 20% at 10% 80%, rgba(123,47,255,0.06) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+            animation: bgPulse 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes bgPulse { 0% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(123,47,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(123,47,255,0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none; z-index: 0;
+        }
+
+        .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .particle {
+            position: absolute; width: 2px; height: 2px;
+            background: var(--purple-glow); border-radius: 50%;
+            animation: floatUp linear infinite; opacity: 0;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 0.6; } 90% { opacity: 0.3; }
+            100% { transform: translateY(-10px) translateX(30px); opacity: 0; }
+        }
+
+        /* ── PAGES ── */
+        .page { display: none; min-height: 100vh; position: relative; z-index: 1; }
+        .page.active { display: block; }
+
+        /* ── HOME PAGE ── */
+        #page-home {
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 100vh; padding: 40px 20px;
+        }
+        #page-home.active { display: flex; }
+
+        .home-header { text-align: center; margin-bottom: 60px; }
+        .home-notice {
+            font-family: var(--font-title);
+            font-size: 0.72rem; letter-spacing: 6px;
+            color: var(--purple-glow); text-transform: uppercase;
+            margin-bottom: 14px; opacity: 0.8;
+            animation: flicker 4s infinite;
+        }
+        @keyframes flicker {
+            0%,95%,100% { opacity: 0.8; } 96% { opacity: 0.3; } 97% { opacity: 0.9; } 98% { opacity: 0.4; }
+        }
+        .home-title {
+            font-family: var(--font-title); font-size: clamp(2.5rem, 8vw, 5rem);
+            font-weight: 900; letter-spacing: 6px; color: #fff;
+            text-shadow: 0 0 20px rgba(123,47,255,0.8), 0 0 60px rgba(123,47,255,0.4), 0 0 120px rgba(123,47,255,0.2);
+            margin-bottom: 10px; line-height: 1.1;
+        }
+        .home-title span { color: var(--purple-glow); }
+        .home-subtitle {
+            color: var(--text-mid); font-size: 0.9rem;
+            letter-spacing: 3px; text-transform: uppercase; font-weight: 300;
+        }
+        .header-line { display: flex; align-items: center; gap: 16px; margin-top: 24px; }
+        .header-line::before, .header-line::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--purple-core), transparent);
+        }
+        .rune-diamond {
+            width: 8px; height: 8px; background: var(--purple-glow);
+            transform: rotate(45deg); box-shadow: 0 0 10px var(--purple-glow);
+        }
+
+        /* Mini rank display on home */
+        .home-rank-strip {
+            background: var(--bg-panel); border: 1px solid var(--border-faint);
+            border-top: 2px solid var(--purple-core);
+            padding: 16px 28px; margin-bottom: 50px;
+            backdrop-filter: blur(12px);
+            clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+            display: flex; align-items: center; gap: 20px;
+            min-width: 320px;
+        }
+        .home-rank-emblem {
+            width: 52px; height: 52px; border: 2px solid var(--purple-core);
+            display: flex; align-items: center; justify-content: center;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: linear-gradient(135deg, rgba(123,47,255,0.3), rgba(56,189,248,0.1));
+            animation: emblemPulse 3s ease-in-out infinite;
+        }
+        @keyframes emblemPulse {
+            0%,100% { box-shadow: 0 0 15px rgba(123,47,255,0.4); }
+            50% { box-shadow: 0 0 30px rgba(123,47,255,0.8), 0 0 60px rgba(123,47,255,0.3); }
+        }
+        .home-rank-letter { font-family: var(--font-title); font-size: 1.4rem; font-weight: 900; color: var(--purple-glow); text-shadow: 0 0 20px var(--purple-glow); }
+        .home-rank-info { flex: 1; }
+        .home-rank-name { font-family: var(--font-title); font-size: 1rem; color: #fff; margin-bottom: 2px; }
+        .home-rank-sub { font-size: 0.78rem; color: var(--text-mid); }
+        .home-level { text-align: right; }
+        .home-lv-label { font-size: 0.6rem; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .home-lv-num { font-family: var(--font-title); font-size: 2.2rem; font-weight: 900; line-height: 1; color: var(--purple-glow); text-shadow: 0 0 20px rgba(168,85,247,0.8); }
+
+        /* XP bar on home */
+        .home-xp-bar {
+            width: 100%; min-width: 320px; margin-bottom: 50px;
+            background: var(--bg-panel); border: 1px solid var(--border-faint);
+            padding: 14px 20px; backdrop-filter: blur(12px);
+            clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+        }
+        .home-xp-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.75rem; }
+        .home-xp-label { letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; }
+        .home-xp-val { color: var(--purple-glow); font-weight: 600; }
+        .xp-bar-track { width: 100%; height: 6px; background: rgba(123,47,255,0.1); border: 1px solid rgba(123,47,255,0.2); position: relative; overflow: hidden; }
+        .xp-bar-fill { height: 100%; background: linear-gradient(90deg, var(--purple-dim), var(--purple-glow), var(--blue-ice)); transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); position: relative; }
+        .xp-bar-fill::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); animation: xpShimmer 2.5s infinite; }
+        @keyframes xpShimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        /* Nav cards */
+        .nav-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; max-width: 760px; }
+        .nav-card {
+            background: var(--bg-panel); border: 1px solid var(--border-faint);
+            padding: 32px 24px; cursor: pointer;
+            clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+            backdrop-filter: blur(12px); position: relative; overflow: hidden;
+            transition: all 0.3s ease; text-align: center;
+        }
+        .nav-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: var(--purple-core); transform: scaleX(0); transition: transform 0.3s ease;
+        }
+        .nav-card:hover { border-color: rgba(123,47,255,0.5); background: rgba(123,47,255,0.08); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(123,47,255,0.2); }
+        .nav-card:hover::before { transform: scaleX(1); }
+        .nav-card-icon { font-size: 2.2rem; margin-bottom: 14px; display: block; }
+        .nav-card-title { font-family: var(--font-title); font-size: 1rem; font-weight: 700; letter-spacing: 2px; color: #fff; margin-bottom: 6px; text-transform: uppercase; }
+        .nav-card-desc { font-size: 0.78rem; color: var(--text-mid); letter-spacing: 0.5px; line-height: 1.4; }
+        .nav-card-badge {
+            position: absolute; top: 10px; right: 10px;
+            font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase;
+            padding: 3px 8px; border: 1px solid var(--border-faint); color: var(--text-dim);
+        }
+
+        /* ── BACK NAV ── */
+        .back-nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(3,5,8,0.95); backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-faint);
+            padding: 12px 20px; display: flex; align-items: center; gap: 16px;
+        }
+        .back-btn {
+            background: none; border: 1px solid var(--border-faint); color: var(--purple-glow);
+            font-family: var(--font-title); font-size: 0.7rem; letter-spacing: 2px;
+            text-transform: uppercase; padding: 8px 16px; cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .back-btn:hover { background: rgba(123,47,255,0.1); border-color: var(--purple-glow); }
+        .back-nav-title { font-family: var(--font-title); font-size: 0.85rem; letter-spacing: 4px; color: var(--text-mid); text-transform: uppercase; }
+        .back-nav-rank { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+        .nav-rank-pill {
+            font-family: var(--font-title); font-size: 0.7rem; letter-spacing: 2px;
+            padding: 4px 12px; border: 1px solid rgba(123,47,255,0.3);
+            color: var(--purple-glow); background: rgba(123,47,255,0.08);
+        }
+
+        .container { max-width: 860px; margin: 0 auto; padding: 30px 20px 60px; position: relative; z-index: 1; }
+
+        /* ── RANK BANNER ── */
+        .rank-banner {
+            background: var(--bg-panel); border: 1px solid var(--border-faint);
+            border-top: 2px solid var(--purple-core); padding: 24px 30px; margin-bottom: 24px;
+            position: relative; overflow: hidden;
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+            backdrop-filter: blur(12px);
+        }
+        .rank-banner::before {
+            content: ''; position: absolute; top: -100%; left: -100%;
+            width: 300%; height: 300%;
+            background: conic-gradient(from 0deg, transparent 0%, rgba(123,47,255,0.03) 25%, transparent 50%);
+            animation: rotateBg 20s linear infinite;
+        }
+        @keyframes rotateBg { to { transform: rotate(360deg); } }
+        .rank-grid { display: grid; grid-template-columns: auto 1fr auto; gap: 24px; align-items: center; position: relative; }
+        .rank-emblem {
+            width: 70px; height: 70px; border: 2px solid var(--purple-core);
+            display: flex; align-items: center; justify-content: center;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: linear-gradient(135deg, rgba(123,47,255,0.3), rgba(56,189,248,0.1));
+            animation: emblemPulse 3s ease-in-out infinite;
+        }
+        .rank-letter { font-family: var(--font-title); font-size: 1.8rem; font-weight: 900; color: var(--purple-glow); text-shadow: 0 0 20px var(--purple-glow); }
+        .rank-title-label { font-size: 0.7rem; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+        .rank-name { font-family: var(--font-title); font-size: 1.3rem; color: #fff; margin-bottom: 6px; }
+        .rank-sub { font-size: 0.82rem; color: var(--text-mid); }
+        .rank-level-display { text-align: right; }
+        .rank-lv-label { font-size: 0.65rem; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; display: block; margin-bottom: 2px; }
+        .rank-lv-number { font-family: var(--font-title); font-size: 2.8rem; font-weight: 900; line-height: 1; color: var(--purple-glow); text-shadow: 0 0 20px rgba(168,85,247,0.8); }
+
+        /* ── XP SECTION ── */
+        .xp-section {
+            background: var(--bg-panel); border: 1px solid var(--border-faint);
+            padding: 20px 24px; margin-bottom: 24px; backdrop-filter: blur(12px);
+            clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+        }
+        .xp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .xp-label { font-size: 0.7rem; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; }
+        .xp-values { font-size: 0.85rem; color: var(--purple-glow); font-weight: 600; }
+        .xp-total-line { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.78rem; color: var(--text-dim); }
+
+        /* ── DAILY QUEST ── */
+        .daily-quest-section {
+            background: var(--bg-panel); border: 1px solid var(--border-faint);
+            border-left: 3px solid var(--purple-core); padding: 24px; margin-bottom: 24px;
+            backdrop-filter: blur(12px); position: relative; overflow: hidden;
+        }
+        .quest-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        .quest-eyebrow { font-size: 0.65rem; letter-spacing: 4px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+        .quest-title { font-family: var(--font-title); font-size: 1.1rem; color: #fff; }
+        .daily-rank-badge { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+        .rank-badge-letter { font-family: var(--font-title); font-size: 1.4rem; font-weight: 900; padding: 6px 14px; border: 1px solid; letter-spacing: 2px; }
+        .rank-badge-name { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim); }
+        .rank-E { color: var(--text-mid); border-color: var(--text-mid); background: rgba(148,163,184,0.08); }
+        .rank-D { color: #60a5fa; border-color: #60a5fa; background: rgba(96,165,250,0.08); }
+        .rank-C { color: var(--success); border-color: var(--success); background: rgba(52,211,153,0.08); }
+        .rank-B { color: var(--gold); border-color: var(--gold); background: rgba(251,191,36,0.08); }
+        .rank-A { color: #f97316; border-color: #f97316; background: rgba(249,115,22,0.08); text-shadow: 0 0 10px rgba(249,115,22,0.6); }
+        .rank-S { color: var(--purple-glow); border-color: var(--purple-glow); background: rgba(168,85,247,0.12); text-shadow: 0 0 15px rgba(168,85,247,0.9); box-shadow: 0 0 20px rgba(168,85,247,0.3); }
+        .quest-divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-faint), transparent); margin-bottom: 16px; }
+
+        /* ── EXERCISES ── */
+        .exercises-list { display: grid; gap: 8px; margin-bottom: 24px; }
+        .exercise-row {
+            display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; align-items: center;
+            padding: 12px 16px; background: rgba(123,47,255,0.04); border: 1px solid var(--border-faint);
+            border-left: 2px solid var(--purple-core); transition: all 0.2s ease;
+            animation: rowIn 0.4s ease forwards; opacity: 0;
+        }
+        @keyframes rowIn { from { opacity: 0; transform: translateX(-15px); } to { opacity: 1; transform: translateX(0); } }
+        .exercise-row:nth-child(1){animation-delay:0.05s} .exercise-row:nth-child(2){animation-delay:0.1s}
+        .exercise-row:nth-child(3){animation-delay:0.15s} .exercise-row:nth-child(4){animation-delay:0.2s}
+        .exercise-row:nth-child(5){animation-delay:0.25s}
+        .exercise-row:hover { background: rgba(123,47,255,0.1); border-color: rgba(123,47,255,0.5); }
+        .exercise-index { font-size: 0.7rem; color: var(--purple-glow); font-weight: 700; opacity: 0.7; text-align: center; }
+        .exercise-name { font-weight: 600; font-size: 1rem; letter-spacing: 0.5px; color: var(--text-bright); }
+        .exercise-value { font-family: var(--font-title); font-size: 0.92rem; color: var(--blue-ice); font-weight: 700; white-space: nowrap; text-shadow: 0 0 8px rgba(56,189,248,0.5); }
+
+        /* ── INPUTS / BUTTONS ── */
+        .time-block { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; }
+        .input-group { flex: 1; }
+        .input-label { display: block; font-size: 0.72rem; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; }
+        input[type="number"], input[type="text"] {
+            width: 100%; background: rgba(123,47,255,0.06); border: 1px solid var(--border-faint);
+            color: var(--text-bright); font-family: var(--font-body); font-size: 1rem;
+            padding: 12px 16px; outline: none; transition: all 0.2s ease;
+        }
+        input[type="number"]:focus, input[type="text"]:focus { border-color: var(--purple-glow); background: rgba(123,47,255,0.1); box-shadow: 0 0 15px rgba(123,47,255,0.2); }
+        .btn-group { display: flex; gap: 12px; flex-wrap: wrap; }
+        .btn {
+            font-family: var(--font-title); font-size: 0.78rem; letter-spacing: 2px; text-transform: uppercase;
+            padding: 14px 28px; cursor: pointer; border: none; transition: all 0.2s ease;
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--purple-dim), var(--purple-core)); color: #fff; flex: 1; }
+        .btn-primary:hover { background: linear-gradient(135deg, var(--purple-core), var(--purple-glow)); box-shadow: 0 0 25px rgba(123,47,255,0.5); transform: translateY(-1px); }
+        .btn-secondary { background: rgba(123,47,255,0.08); color: var(--purple-glow); border: 1px solid var(--border-faint); }
+        .btn-secondary:hover { background: rgba(123,47,255,0.15); border-color: var(--purple-glow); }
+        .btn-danger { background: rgba(248,113,113,0.08); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); padding: 10px 20px; font-family: var(--font-title); font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.2s ease; }
+        .btn-danger:hover { background: rgba(248,113,113,0.15); box-shadow: 0 0 15px rgba(248,113,113,0.2); }
+
+        /* ── RESULTS ── */
+        .results-panel {
+            background: var(--bg-panel); border: 1px solid rgba(52,211,153,0.3);
+            border-top: 2px solid var(--success); padding: 28px;
+            margin-bottom: 24px; backdrop-filter: blur(12px);
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+            animation: panelIn 0.5s ease;
+        }
+        @keyframes panelIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .hidden { display: none !important; }
+        .results-header { text-align: center; margin-bottom: 20px; }
+        .results-eyebrow { font-size: 0.7rem; letter-spacing: 4px; color: var(--success); text-transform: uppercase; }
+        .results-title { font-family: var(--font-title); font-size: 1.3rem; color: #fff; margin-top: 6px; }
+        .xp-gain-big { font-family: var(--font-title); font-size: 3rem; font-weight: 900; text-align: center; color: var(--success); text-shadow: 0 0 30px rgba(52,211,153,0.8); margin: 16px 0; animation: xpPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+        @keyframes xpPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .result-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+        .result-stat-item { text-align: center; padding: 12px; background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.15); }
+        .rs-label { display: block; font-size: 0.65rem; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+        .rs-value { font-family: var(--font-title); font-size: 1.4rem; color: var(--success); }
+
+        /* ── STATS FOOTER ── */
+        .stats-footer { background: var(--bg-panel); border: 1px solid var(--border-faint); padding: 20px 24px; margin-bottom: 20px; backdrop-filter: blur(12px); }
+        .stats-footer-title { font-size: 0.65rem; letter-spacing: 4px; color: var(--text-dim); text-transform: uppercase; text-align: center; margin-bottom: 16px; }
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .stats-item { text-align: center; }
+        .stats-item-label { display: block; font-size: 0.62rem; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px; }
+        .stats-item-value { font-family: var(--font-title); font-size: 1.2rem; color: var(--text-bright); }
+        .data-controls { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; }
+        .data-controls p { font-size: 0.75rem; color: var(--text-dim); letter-spacing: 1px; }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 24px; right: 24px;
+            background: rgba(8,12,28,0.95); border: 1px solid var(--purple-core); border-left: 3px solid var(--purple-glow);
+            color: var(--text-bright); padding: 14px 20px; font-size: 0.88rem; font-weight: 600; letter-spacing: 0.5px;
+            animation: toastIn 0.3s ease; z-index: 1000; backdrop-filter: blur(12px); box-shadow: 0 0 20px rgba(123,47,255,0.3);
+        }
+        @keyframes toastIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* ══════════════════════════════════════════
+           POMODORO PAGE
+        ══════════════════════════════════════════ */
+        .pomodoro-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+        .pomo-panel {
+            background: var(--bg-panel); border: 1px solid var(--border-faint);
+            padding: 28px; backdrop-filter: blur(12px);
+            clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+            position: relative; overflow: hidden;
+        }
+        .pomo-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--purple-core); }
+
+        .pomo-title { font-family: var(--font-title); font-size: 0.75rem; letter-spacing: 4px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 20px; }
+
+        /* Timer ring */
+        .timer-ring-wrap { display: flex; flex-direction: column; align-items: center; margin: 16px 0 24px; position: relative; }
+        .timer-svg { width: 200px; height: 200px; transform: rotate(-90deg); }
+        .timer-bg-circle { fill: none; stroke: rgba(123,47,255,0.12); stroke-width: 6; }
+        .timer-progress-circle {
+            fill: none; stroke: url(#timerGrad); stroke-width: 6;
+            stroke-linecap: round; stroke-dasharray: 565.48; stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear;
+        }
+        .timer-display {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .timer-time { font-family: var(--font-title); font-size: 2.6rem; font-weight: 900; color: #fff; text-shadow: 0 0 20px rgba(123,47,255,0.6); line-height: 1; }
+        .timer-label { font-size: 0.65rem; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; margin-top: 4px; }
+        .timer-session-count { font-size: 0.75rem; color: var(--purple-glow); margin-top: 2px; }
+
+        /* Duration buttons */
+        .duration-btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+        .dur-btn {
+            background: rgba(123,47,255,0.06); border: 1px solid var(--border-faint);
+            color: var(--text-mid); font-family: var(--font-title); font-size: 0.72rem;
+            letter-spacing: 1px; padding: 10px 8px; cursor: pointer; transition: all 0.2s ease;
+            text-align: center;
+        }
+        .dur-btn.active, .dur-btn:hover { background: rgba(123,47,255,0.15); border-color: var(--purple-glow); color: var(--purple-glow); }
+        .dur-btn.active { border-color: var(--purple-core); color: #fff; background: rgba(123,47,255,0.2); }
+
+        .pomo-controls { display: flex; gap: 10px; }
+        .pomo-btn { flex: 1; font-family: var(--font-title); font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; padding: 12px 16px; cursor: pointer; border: none; transition: all 0.2s ease; }
+        .pomo-start { background: linear-gradient(135deg, var(--purple-dim), var(--purple-core)); color: #fff; }
+        .pomo-start:hover { background: linear-gradient(135deg, var(--purple-core), var(--purple-glow)); box-shadow: 0 0 20px rgba(123,47,255,0.5); }
+        .pomo-reset { background: rgba(123,47,255,0.06); color: var(--text-mid); border: 1px solid var(--border-faint); }
+        .pomo-reset:hover { border-color: var(--text-mid); color: var(--text-bright); }
+
+        /* XP Bonus panel */
+        .pomo-xp-bonus {
+            background: rgba(123,47,255,0.04); border: 1px solid var(--border-faint);
+            border-left: 2px solid var(--gold); padding: 16px; margin-top: 20px;
+        }
+        .bonus-title { font-size: 0.65rem; letter-spacing: 3px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 10px; }
+        .bonus-item { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px; color: var(--text-mid); }
+        .bonus-val { color: var(--gold); font-weight: 600; }
+        .bonus-total { display: flex; justify-content: space-between; font-family: var(--font-title); font-size: 1rem; color: var(--gold); border-top: 1px solid rgba(251,191,36,0.2); margin-top: 8px; padding-top: 8px; }
+
+        /* Stats mini in pomodoro */
+        .pomo-stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+        .pomo-stat { text-align: center; background: rgba(123,47,255,0.04); border: 1px solid var(--border-faint); padding: 12px 8px; }
+        .pomo-stat-val { font-family: var(--font-title); font-size: 1.3rem; color: var(--text-bright); display: block; }
+        .pomo-stat-lbl { font-size: 0.6rem; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+
+        /* ══════════════════════════════════════════
+           TODO PAGE
+        ══════════════════════════════════════════ */
+        .todo-header-bar { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+        .todo-input-wrap { flex: 1; position: relative; }
+        .todo-input-wrap input { padding-right: 50px; }
+        .todo-add-btn {
+            position: absolute; right: 0; top: 0; bottom: 0;
+            background: linear-gradient(135deg, var(--purple-dim), var(--purple-core));
+            border: none; color: #fff; padding: 0 16px; cursor: pointer;
+            font-size: 1.2rem; transition: all 0.2s ease;
+        }
+        .todo-add-btn:hover { background: linear-gradient(135deg, var(--purple-core), var(--purple-glow)); }
+
+        .todo-xp-select {
+            background: rgba(123,47,255,0.06); border: 1px solid var(--border-faint);
+            color: var(--text-bright); font-family: var(--font-body); font-size: 0.85rem;
+            padding: 12px 14px; outline: none; cursor: pointer; min-width: 120px;
+        }
+        .todo-xp-select:focus { border-color: var(--purple-glow); }
+        .todo-xp-select option { background: #060b14; }
+
+        /* Filters */
+        .todo-filters { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filter-btn {
+            font-family: var(--font-title); font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase;
+            padding: 8px 16px; background: rgba(123,47,255,0.04); border: 1px solid var(--border-faint);
+            color: var(--text-dim); cursor: pointer; transition: all 0.2s ease;
+        }
+        .filter-btn.active, .filter-btn:hover { background: rgba(123,47,255,0.12); border-color: var(--purple-glow); color: var(--purple-glow); }
+        .filter-btn.active { color: #fff; }
+
+        /* Stats strip */
+        .todo-stats-strip {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;
+            background: var(--bg-panel); border: 1px solid var(--border-faint);
+            padding: 16px; backdrop-filter: blur(12px);
+        }
+        .ts-item { text-align: center; }
+        .ts-val { display: block; font-family: var(--font-title); font-size: 1.4rem; color: var(--text-bright); margin-bottom: 3px; }
+        .ts-lbl { font-size: 0.6rem; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; }
+
+        /* Streak */
+        .streak-fire { color: var(--gold); font-size: 1.6rem; }
+
+        /* Todo items */
+        .todo-list { display: flex; flex-direction: column; gap: 8px; }
+        .todo-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 16px; background: rgba(123,47,255,0.04);
+            border: 1px solid var(--border-faint); border-left: 2px solid var(--purple-core);
+            transition: all 0.3s ease; animation: rowIn 0.4s ease forwards; opacity: 0;
+        }
+        .todo-item.done { border-left-color: var(--success); background: rgba(52,211,153,0.04); opacity: 0.6; }
+        .todo-item.failed { border-left-color: var(--danger); background: rgba(248,113,113,0.04); opacity: 0.5; }
+        .todo-check {
+            width: 22px; height: 22px; border: 2px solid var(--border-faint); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            transition: all 0.2s ease; font-size: 0.8rem;
+        }
+        .todo-check:hover { border-color: var(--success); background: rgba(52,211,153,0.1); }
+        .todo-check.done { border-color: var(--success); background: rgba(52,211,153,0.2); color: var(--success); }
+        .todo-check.failed { border-color: var(--danger); background: rgba(248,113,113,0.15); color: var(--danger); cursor: default; }
+        .todo-text { flex: 1; font-size: 0.95rem; color: var(--text-bright); }
+        .todo-item.done .todo-text { text-decoration: line-through; color: var(--text-dim); }
+        .todo-item.failed .todo-text { text-decoration: line-through; color: var(--text-dim); }
+        .todo-xp-badge {
+            font-family: var(--font-title); font-size: 0.7rem; letter-spacing: 1px;
+            padding: 3px 10px; border: 1px solid rgba(251,191,36,0.3); color: var(--gold);
+            background: rgba(251,191,36,0.08); white-space: nowrap;
+        }
+        .todo-fail-btn {
+            background: none; border: 1px solid rgba(248,113,113,0.2); color: var(--danger);
+            font-family: var(--font-title); font-size: 0.6rem; letter-spacing: 1px;
+            padding: 4px 10px; cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
+        }
+        .todo-fail-btn:hover { background: rgba(248,113,113,0.1); border-color: var(--danger); }
+        .todo-delete-btn {
+            background: none; border: none; color: var(--text-dim); font-size: 1rem;
+            cursor: pointer; transition: color 0.2s; padding: 4px;
+        }
+        .todo-delete-btn:hover { color: var(--danger); }
+        .todo-empty { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 640px) {
+            .rank-grid { grid-template-columns: auto 1fr; }
+            .rank-level-display { display: none; }
+            .result-stats { grid-template-columns: 1fr; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+            .btn-group { flex-direction: column; }
+            .pomodoro-layout { grid-template-columns: 1fr; }
+            .nav-cards { grid-template-columns: 1fr; }
+            .todo-stats-strip { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .todo-header-bar { flex-direction: column; }
+            .todo-xp-select { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<!-- ══════════════════════════ HOME PAGE ══════════════════════════ -->
+<div class="page active" id="page-home">
+    <div class="home-header">
+        <div class="home-notice">⬡ System Notification ⬡</div>
+        <h1 class="home-title">SOLO <span>SYSTEM</span></h1>
+        <p class="home-subtitle">Arise, Hunter — Choisis ta voie</p>
+        <div class="header-line"><div class="rune-diamond"></div></div>
+    </div>
+
+    <div class="home-rank-strip">
+        <div class="home-rank-emblem">
+            <span class="home-rank-letter" id="homeRankLetter">E</span>
+        </div>
+        <div class="home-rank-info">
+            <div class="home-rank-name" id="homeRankName">Rang E — Débutant</div>
+            <div class="home-rank-sub" id="homeRankSub">Commence ton entraînement, Hunter</div>
+        </div>
+        <div class="home-level">
+            <span class="home-lv-label">LV</span>
+            <div class="home-lv-num" id="homeLvNum">1</div>
+        </div>
+    </div>
+
+    <div class="home-xp-bar">
+        <div class="home-xp-header">
+            <span class="home-xp-label">Expérience</span>
+            <span class="home-xp-val" id="homeXpVal">0 / 200 XP</span>
+        </div>
+        <div class="xp-bar-track">
+            <div class="xp-bar-fill" id="homeXpFill" style="width:0%"></div>
+        </div>
+    </div>
+
+    <div class="nav-cards">
+        <div class="nav-card" onclick="goTo('workout')">
+            <span class="nav-card-badge">DAILY</span>
+            <span class="nav-card-icon">⚔️</span>
+            <div class="nav-card-title">Training</div>
+            <div class="nav-card-desc">Quête physique quotidienne. Exercices générés selon la difficulté du jour.</div>
+        </div>
+        <div class="nav-card" onclick="goTo('focus')">
+            <span class="nav-card-badge">DEEP WORK</span>
+            <span class="nav-card-icon">🔮</span>
+            <div class="nav-card-title">Focus</div>
+            <div class="nav-card-desc">Sessions de travail intensif. Accumule de l'XP par chaque bloc complété.</div>
+        </div>
+        <div class="nav-card" onclick="goTo('todo')">
+            <span class="nav-card-badge">QUÊTES</span>
+            <span class="nav-card-icon">📋</span>
+            <div class="nav-card-title">Missions</div>
+            <div class="nav-card-desc">Liste de tâches. Chaque mission accomplie te rapporte de l'XP.</div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════ WORKOUT PAGE ══════════════════════════ -->
+<div class="page" id="page-workout">
+    <nav class="back-nav">
+        <button class="back-btn" onclick="goTo('home')">← Retour</button>
+        <span class="back-nav-title">Training — Quête Quotidienne</span>
+        <div class="back-nav-rank">
+            <span class="nav-rank-pill" id="wNavRank">LV 1 · Rang E</span>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="rank-banner">
+            <div class="rank-grid">
+                <div class="rank-emblem"><span class="rank-letter" id="rankLetter">E</span></div>
+                <div class="rank-info">
+                    <div class="rank-title-label">Hunter Rank</div>
+                    <div class="rank-name" id="rankName">Rang E — Débutant</div>
+                    <div class="rank-sub" id="rankSub">Commence ton entraînement, Hunter</div>
+                </div>
+                <div class="rank-level-display">
+                    <span class="rank-lv-label">LV</span>
+                    <div class="rank-lv-number" id="currentLevel">1</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="xp-section">
+            <div class="xp-header">
+                <span class="xp-label">Expérience</span>
+                <span class="xp-values" id="xpProgress">0 / 200 XP</span>
+            </div>
+            <div class="xp-bar-track">
+                <div class="xp-bar-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+            <div class="xp-total-line">
+                <span>Progression palier</span>
+                <span id="progressPercent">0%</span>
+            </div>
+        </div>
+
+        <div class="daily-quest-section">
+            <div class="quest-header">
+                <div>
+                    <div class="quest-eyebrow">Quête Quotidienne</div>
+                    <div class="quest-title" id="questTitle">Chargement...</div>
+                </div>
+                <div class="daily-rank-badge">
+                    <div class="rank-badge-letter rank-E" id="dailyRankBadge">E</div>
+                    <div class="rank-badge-name" id="dailyRankName">Rang E</div>
+                </div>
+            </div>
+            <div class="quest-divider"></div>
+            <div class="exercises-list" id="exercisesGrid"></div>
+            <div class="time-block">
+                <div class="input-group">
+                    <label class="input-label">⏱ Temps de Séance (minutes)</label>
+                    <input type="number" id="timeInput" placeholder="30" min="0.1" step="0.1" value="30">
+                </div>
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-primary" id="submitBtn">▶ Valider la Quête</button>
+                <button class="btn btn-secondary" id="generateBtn">↺ Regénérer</button>
+            </div>
+        </div>
+
+        <div class="results-panel hidden" id="results">
+            <div class="results-header">
+                <span class="results-eyebrow">⬡ Quête Accomplie ⬡</span>
+                <div class="results-title">Expérience Acquise</div>
+            </div>
+            <div class="xp-gain-big" id="xpGainDisplay">+0 XP</div>
+            <div class="result-stats">
+                <div class="result-stat-item"><span class="rs-label">XP Gagné</span><span class="rs-value" id="xpGainedStat">0</span></div>
+                <div class="result-stat-item"><span class="rs-label">XP Total</span><span class="rs-value" id="totalXPStat">0</span></div>
+                <div class="result-stat-item"><span class="rs-label">Niveau</span><span class="rs-value" id="levelStat">1</span></div>
+            </div>
+        </div>
+
+        <div class="stats-footer">
+            <div class="stats-footer-title">— Statistiques du Hunter —</div>
+            <div class="stats-row">
+                <div class="stats-item"><span class="stats-item-label">Niveau actuel</span><span class="stats-item-value" id="statLevel">1</span></div>
+                <div class="stats-item"><span class="stats-item-label">XP Total</span><span class="stats-item-value" id="totalXP">0</span></div>
+                <div class="stats-item"><span class="stats-item-label">Difficulté du jour</span><span class="stats-item-value" id="statDifficulty">—</span></div>
+                <div class="stats-item"><span class="stats-item-label">Rang Hunter</span><span class="stats-item-value" id="statRank">E</span></div>
+            </div>
+        </div>
+
+        <div class="data-controls">
+            <p>Données sauvegardées localement</p>
+            <button class="btn-danger" id="resetBtn">⚠ Réinitialiser</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════ FOCUS PAGE ══════════════════════════ -->
+<div class="page" id="page-focus">
+    <nav class="back-nav">
+        <button class="back-btn" onclick="goTo('home')">← Retour</button>
+        <span class="back-nav-title">Focus — Deep Work</span>
+        <div class="back-nav-rank">
+            <span class="nav-rank-pill" id="fNavRank">LV 1 · Rang E</span>
+        </div>
+    </nav>
+    <div class="container">
+
+        <!-- Rank banner condensed -->
+        <div class="rank-banner" style="margin-bottom:20px;">
+            <div class="rank-grid">
+                <div class="rank-emblem"><span class="rank-letter" id="fRankLetter">E</span></div>
+                <div class="rank-info">
+                    <div class="rank-title-label">Hunter Rank</div>
+                    <div class="rank-name" id="fRankName">Rang E — Débutant</div>
+                    <div class="rank-sub" id="fRankSub">Commence ton entraînement, Hunter</div>
+                </div>
+                <div class="rank-level-display">
+                    <span class="rank-lv-label">LV</span>
+                    <div class="rank-lv-number" id="fCurrentLevel">1</div>
+                </div>
+            </div>
+        </div>
+        <div class="xp-section" style="margin-bottom:24px;">
+            <div class="xp-header">
+                <span class="xp-label">Expérience</span>
+                <span class="xp-values" id="fXpProgress">0 / 200 XP</span>
+            </div>
+            <div class="xp-bar-track">
+                <div class="xp-bar-fill" id="fProgressFill" style="width:0%"></div>
+            </div>
+            <div class="xp-total-line">
+                <span>Progression palier</span>
+                <span id="fProgressPercent">0%</span>
+            </div>
+        </div>
+
+        <div class="pomodoro-layout">
+            <!-- Timer -->
+            <div class="pomo-panel">
+                <div class="pomo-title">⬡ Chrono de Session</div>
+
+                <div class="duration-btns">
+                    <div class="dur-btn" data-min="5" onclick="selectDuration(5)">5 min</div>
+                    <div class="dur-btn active" data-min="45" onclick="selectDuration(45)">45 min</div>
+                    <div class="dur-btn" data-min="60" onclick="selectDuration(60)">1h</div>
+                    <div class="dur-btn" data-min="90" onclick="selectDuration(90)">1h30</div>
+                </div>
+
+                <div class="timer-ring-wrap">
+                    <svg class="timer-svg" viewBox="0 0 200 200">
+                        <defs>
+                            <linearGradient id="timerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" style="stop-color:#4c1d95"/>
+                                <stop offset="50%" style="stop-color:#7b2fff"/>
+                                <stop offset="100%" style="stop-color:#38bdf8"/>
+                            </linearGradient>
+                        </defs>
+                        <circle class="timer-bg-circle" cx="100" cy="100" r="90"/>
+                        <circle class="timer-progress-circle" id="timerCircle" cx="100" cy="100" r="90"/>
+                    </svg>
+                    <div class="timer-display">
+                        <div class="timer-time" id="timerDisplay">45:00</div>
+                        <div class="timer-label" id="timerStatusLabel">Prêt</div>
+                        <div class="timer-session-count" id="timerSessionCount">Session 1</div>
+                    </div>
+                </div>
+
+                <div class="pomo-controls">
+                    <button class="pomo-btn pomo-start" id="pomoStartBtn" onclick="toggleTimer()">▶ Démarrer</button>
+                    <button class="pomo-btn pomo-reset" onclick="resetTimer()">↺ Reset</button>
+                </div>
+
+                <div class="pomo-xp-bonus">
+                    <div class="bonus-title">⬡ Bonus XP Estimé</div>
+                    <div class="bonus-item"><span>Base (durée)</span><span class="bonus-val" id="bonusBase">+75 XP</span></div>
+                    <div class="bonus-item" id="bonusLongRow" style="display:none"><span>Session 90min+</span><span class="bonus-val">× 1.3</span></div>
+                    <div class="bonus-total"><span>Total estimé</span><span id="bonusTotal">+75 XP</span></div>
+                </div>
+
+                <div class="pomo-stats-row">
+                    <div class="pomo-stat"><span class="pomo-stat-val" id="pomoSessions">0</span><span class="pomo-stat-lbl">Sessions</span></div>
+                    <div class="pomo-stat"><span class="pomo-stat-val" id="pomoHours">0h00</span><span class="pomo-stat-lbl">Heures</span></div>
+                    <div class="pomo-stat"><span class="pomo-stat-val" id="pomoXpGained">0</span><span class="pomo-stat-lbl">XP Gagné</span></div>
+                </div>
+
+                <div style="margin-top:16px; padding:12px 14px; background:rgba(123,47,255,0.04); border:1px solid var(--border-faint); font-size:0.75rem; color:var(--text-dim); line-height:1.6;">
+                    <strong style="color:var(--text-mid);">Règle deep work :</strong> 1h = 100 XP · 90min+ = ×1.3<br>
+                    Bip automatique à la fin du bloc. Sois honnête.
+                </div>
+            </div>
+
+            <!-- Right side stats -->
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div class="pomo-panel">
+                    <div class="pomo-title">⬡ Statistiques Hunter</div>
+                    <div class="stats-row" style="grid-template-columns:repeat(2,1fr); gap:10px;">
+                        <div class="stats-item"><span class="stats-item-label">Niveau</span><span class="stats-item-value" id="fStatLevel">1</span></div>
+                        <div class="stats-item"><span class="stats-item-label">XP Total</span><span class="stats-item-value" id="fStatXP">0</span></div>
+                        <div class="stats-item"><span class="stats-item-label">Rang</span><span class="stats-item-value" id="fStatRank">E</span></div>
+                        <div class="stats-item"><span class="stats-item-label">Sessions</span><span class="stats-item-value" id="fStatSessions">0</span></div>
+                    </div>
+                </div>
+
+                <div class="pomo-panel" style="flex:1;">
+                    <div class="pomo-title">⬡ Dernières Sessions</div>
+                    <div id="pomoHistory" style="display:flex;flex-direction:column;gap:8px;">
+                        <div style="text-align:center;padding:24px;color:var(--text-dim);font-size:0.8rem;letter-spacing:2px;">AUCUNE SESSION</div>
+                    </div>
+                </div>
+
+                <div class="pomo-panel">
+                    <div class="pomo-title">⬡ Reset Statistiques</div>
+                    <button class="btn-danger" style="width:100%" onclick="resetPomoStats()">⚠ Réinitialiser Focus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════ TODO PAGE ══════════════════════════ -->
+<div class="page" id="page-todo">
+    <nav class="back-nav">
+        <button class="back-btn" onclick="goTo('home')">← Retour</button>
+        <span class="back-nav-title">Missions — Todo List</span>
+        <div class="back-nav-rank">
+            <span class="nav-rank-pill" id="tNavRank">LV 1 · Rang E</span>
+        </div>
+    </nav>
+    <div class="container">
+
+        <!-- Rank banner -->
+        <div class="rank-banner" style="margin-bottom:20px;">
+            <div class="rank-grid">
+                <div class="rank-emblem"><span class="rank-letter" id="tRankLetter">E</span></div>
+                <div class="rank-info">
+                    <div class="rank-title-label">Hunter Rank</div>
+                    <div class="rank-name" id="tRankName">Rang E — Débutant</div>
+                    <div class="rank-sub" id="tRankSub">Commence ton entraînement, Hunter</div>
+                </div>
+                <div class="rank-level-display">
+                    <span class="rank-lv-label">LV</span>
+                    <div class="rank-lv-number" id="tCurrentLevel">1</div>
+                </div>
+            </div>
+        </div>
+        <div class="xp-section" style="margin-bottom:24px;">
+            <div class="xp-header">
+                <span class="xp-label">Expérience</span>
+                <span class="xp-values" id="tXpProgress">0 / 200 XP</span>
+            </div>
+            <div class="xp-bar-track">
+                <div class="xp-bar-fill" id="tProgressFill" style="width:0%"></div>
+            </div>
+            <div class="xp-total-line">
+                <span>Progression palier</span>
+                <span id="tProgressPercent">0%</span>
+            </div>
+        </div>
+
+        <div class="todo-stats-strip">
+            <div class="ts-item"><span class="ts-val" id="tsSucc">0</span><span class="ts-lbl">Réussies</span></div>
+            <div class="ts-item"><span class="ts-val" id="tsFail">0</span><span class="ts-lbl">Ratées</span></div>
+            <div class="ts-item"><span class="ts-val" id="tsRate">—</span><span class="ts-lbl">Taux</span></div>
+            <div class="ts-item"><span class="ts-val streak-fire" id="tsStreak">🔥 0</span><span class="ts-lbl">Streak</span></div>
+        </div>
+
+        <div class="todo-header-bar">
+            <div class="todo-input-wrap">
+                <input type="text" id="todoInput" placeholder="Ajouter une mission..." onkeydown="if(event.key==='Enter')addTodo()">
+                <button class="todo-add-btn" onclick="addTodo()">+</button>
+            </div>
+            <select class="todo-xp-select" id="todoXpSelect">
+                <option value="10">+10 XP (Facile)</option>
+                <option value="25" selected>+25 XP (Normal)</option>
+                <option value="50">+50 XP (Difficile)</option>
+                <option value="100">+100 XP (Épique)</option>
+            </select>
+        </div>
+
+        <div class="todo-filters">
+            <button class="filter-btn active" onclick="setFilter('all',this)">Tout</button>
+            <button class="filter-btn" onclick="setFilter('pending',this)">En cours</button>
+            <button class="filter-btn" onclick="setFilter('done',this)">Réussies ✓</button>
+            <button class="filter-btn" onclick="setFilter('failed',this)">Ratées ✗</button>
+        </div>
+
+        <div class="todo-list" id="todoList">
+            <div class="todo-empty">Aucune mission en cours — Ajouter une tâche ci-dessus</div>
+        </div>
+
+        <div class="data-controls" style="margin-top:24px;">
+            <p>Données sauvegardées localement</p>
+            <button class="btn-danger" onclick="clearCompletedTodos()">⚠ Effacer complétées</button>
+        </div>
+    </div>
+</div>
+
+<!-- AUDIO -->
+<audio id="timerBeep" preload="auto"></audio>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════
+const EXERCISES = {
+    "Pompes":"muscu","Squats":"muscu","Fentes":"muscu","Dips sur chaise":"muscu",
+    "Tractions":"muscu","Jumping squats":"muscu","Course":"course",
+    "Chaise murale":"cardio","Gainage":"cardio","Montées de genoux":"cardio",
+    "Burpees":"cardio","Russian twist":"abdos","Crunchs":"abdos",
+    "Planche latérale":"abdos","Mountain climbers":"abdos"
+};
+const RANGES = { muscu:[50,150], abdos:[50,150], cardio:[30,120], course:[2.5,15] };
+const TIME_REF = { 1:120, 2:90, 3:60, 4:40, 5:20 };
+const RANKS = [
+    { min:1,  max:5,   letter:"E", name:"Rang E — Débutant",    sub:"Commence ton entraînement, Hunter" },
+    { min:6,  max:12,  letter:"D", name:"Rang D — Apprenti",    sub:"Tu montres du potentiel" },
+    { min:13, max:22,  letter:"C", name:"Rang C — Initié",      sub:"Les portails s'ouvrent devant toi" },
+    { min:23, max:35,  letter:"B", name:"Rang B — Chasseur",    sub:"Tu maîtrises les donjons intermédiaires" },
+    { min:36, max:50,  letter:"A", name:"Rang A — Élite",       sub:"Peu osent te défier" },
+    { min:51, max:999, letter:"S", name:"Rang S — Monarche",    sub:"Tu es dans une autre dimension" },
+];
+const DAILY_RANK_INFO = [
+    { diff:1, label:"E", name:"Rang E", badgeClass:"rank-E", questTitle:"Quête de l'Éveil — Dungeon de Bronze" },
+    { diff:2, label:"D", name:"Rang D", badgeClass:"rank-D", questTitle:"Quête de l'Initiation — Portail de Pierre" },
+    { diff:3, label:"C", name:"Rang C", badgeClass:"rank-C", questTitle:"Quête de l'Épreuve — Donjon des Ombres" },
+    { diff:4, label:"B", name:"Rang B", badgeClass:"rank-B", questTitle:"Quête du Chasseur — Portail de Fer" },
+    { diff:5, label:"S", name:"Rang S", badgeClass:"rank-S", questTitle:"Quête Monarchique — Dungeon Abyssal" },
+];
+function getDailyDifficulty() {
+    const d = Math.floor((Date.now() - new Date(new Date().getFullYear(),0,0))/86400000);
+    const p = [1,2,1,3,2,1,4,2,3,1,5,2,3,4,1,2,5,3,2,4];
+    return p[d % p.length];
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let state = {
+    level: 1, xpTotal: 0,
+    dailyDifficulty: getDailyDifficulty(),
+    currentExercises: {},
+    // pomodoro
+    pomoSessions: 0, pomoTotalMinutes: 0, pomoXpGained: 0,
+    pomoHistory: [],
+    // todo
+    todos: [], todoSucc: 0, todoFail: 0, streak: 0
+};
+let timerInterval = null, timerRunning = false;
+let timerDuration = 45 * 60, timerRemaining = 45 * 60;
+let currentFilter = 'all';
+
+// ═══════════════════════════════════════════════════════════
+// PERSISTENCE
+// ═══════════════════════════════════════════════════════════
+function saveState() {
+    localStorage.setItem('soloSystem_v2', JSON.stringify({
+        level: state.level, xpTotal: state.xpTotal,
+        pomoSessions: state.pomoSessions, pomoTotalMinutes: state.pomoTotalMinutes,
+        pomoXpGained: state.pomoXpGained, pomoHistory: state.pomoHistory,
+        todos: state.todos, todoSucc: state.todoSucc, todoFail: state.todoFail, streak: state.streak
+    }));
+}
+function loadState() {
+    const saved = localStorage.getItem('soloSystem_v2');
+    if (saved) {
+        const d = JSON.parse(saved);
+        Object.assign(state, d);
+    }
+    // migrate old key
+    const old = localStorage.getItem('soloTrainingProgress');
+    if (old && !saved) {
+        const d = JSON.parse(old);
+        state.level = d.level || 1;
+        state.xpTotal = d.xpTotal || 0;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// XP ENGINE
+// ═══════════════════════════════════════════════════════════
+function addXP(amount) {
+    state.xpTotal += amount;
+    let newLevel = 1, cumul = 0;
+    while (true) {
+        const thresh = 200 + 50*(newLevel-1);
+        if (state.xpTotal < cumul + thresh) break;
+        cumul += thresh; newLevel++;
+    }
+    const oldLevel = state.level;
+    state.level = newLevel;
+    if (newLevel > oldLevel) showToast(`⬡ LEVEL UP ! Niveau ${newLevel} atteint !`);
+    saveState();
+    updateAllUI();
+}
+
+function getXPProgress() {
+    const level = state.level;
+    const threshold = 200 + 50*(level-1);
+    let cumul = 0;
+    for (let i=1; i<level; i++) cumul += 200+50*(i-1);
+    const xpInLevel = state.xpTotal - cumul;
+    const pct = Math.max(0, Math.min(1, xpInLevel/threshold));
+    return { xpInLevel, threshold, pct };
+}
+
+function getRankData(level) {
+    return RANKS.find(r => level >= r.min && level <= r.max) || RANKS[RANKS.length-1];
+}
+
+// ═══════════════════════════════════════════════════════════
+// UI UPDATE
+// ═══════════════════════════════════════════════════════════
+function updateAllUI() {
+    const level = state.level;
+    const rank = getRankData(level);
+    const { xpInLevel, threshold, pct } = getXPProgress();
+
+    // HOME
+    document.getElementById('homeRankLetter').textContent = rank.letter;
+    document.getElementById('homeRankName').textContent = rank.name;
+    document.getElementById('homeRankSub').textContent = rank.sub;
+    document.getElementById('homeLvNum').textContent = level;
+    document.getElementById('homeXpVal').textContent = `${Math.floor(xpInLevel)} / ${threshold} XP`;
+    document.getElementById('homeXpFill').style.width = (pct*100)+'%';
+
+    // WORKOUT
+    document.getElementById('rankLetter').textContent = rank.letter;
+    document.getElementById('rankName').textContent = rank.name;
+    document.getElementById('rankSub').textContent = rank.sub;
+    document.getElementById('currentLevel').textContent = level;
+    document.getElementById('xpProgress').textContent = `${Math.floor(xpInLevel)} / ${threshold} XP`;
+    document.getElementById('progressFill').style.width = (pct*100)+'%';
+    document.getElementById('progressPercent').textContent = Math.round(pct*100)+'%';
+    document.getElementById('statLevel').textContent = level;
+    document.getElementById('totalXP').textContent = state.xpTotal;
+    document.getElementById('statRank').textContent = rank.letter;
+    document.getElementById('wNavRank').textContent = `LV ${level} · Rang ${rank.letter}`;
+
+    // FOCUS
+    document.getElementById('fRankLetter').textContent = rank.letter;
+    document.getElementById('fRankName').textContent = rank.name;
+    document.getElementById('fRankSub').textContent = rank.sub;
+    document.getElementById('fCurrentLevel').textContent = level;
+    document.getElementById('fXpProgress').textContent = `${Math.floor(xpInLevel)} / ${threshold} XP`;
+    document.getElementById('fProgressFill').style.width = (pct*100)+'%';
+    document.getElementById('fProgressPercent').textContent = Math.round(pct*100)+'%';
+    document.getElementById('fStatLevel').textContent = level;
+    document.getElementById('fStatXP').textContent = state.xpTotal;
+    document.getElementById('fStatRank').textContent = rank.letter;
+    document.getElementById('fStatSessions').textContent = state.pomoSessions;
+    document.getElementById('fNavRank').textContent = `LV ${level} · Rang ${rank.letter}`;
+    document.getElementById('pomoSessions').textContent = state.pomoSessions;
+    const h = Math.floor(state.pomoTotalMinutes/60), m = state.pomoTotalMinutes%60;
+    document.getElementById('pomoHours').textContent = `${h}h${String(m).padStart(2,'0')}`;
+    document.getElementById('pomoXpGained').textContent = state.pomoXpGained;
+
+    // TODO
+    document.getElementById('tRankLetter').textContent = rank.letter;
+    document.getElementById('tRankName').textContent = rank.name;
+    document.getElementById('tRankSub').textContent = rank.sub;
+    document.getElementById('tCurrentLevel').textContent = level;
+    document.getElementById('tXpProgress').textContent = `${Math.floor(xpInLevel)} / ${threshold} XP`;
+    document.getElementById('tProgressFill').style.width = (pct*100)+'%';
+    document.getElementById('tProgressPercent').textContent = Math.round(pct*100)+'%';
+    document.getElementById('tNavRank').textContent = `LV ${level} · Rang ${rank.letter}`;
+    updateTodoStats();
+}
+
+// ═══════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════
+function goTo(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
+    window.scrollTo(0,0);
+    updateAllUI();
+    if (page === 'todo') renderTodos();
+    if (page === 'focus') renderPomoHistory();
+}
+
+// ═══════════════════════════════════════════════════════════
+// WORKOUT
+// ═══════════════════════════════════════════════════════════
+function generateExercises() {
+    const diff = state.dailyDifficulty;
+    const names = Object.keys(EXERCISES);
+    const picked = [], used = new Set();
+    while (picked.length < 5) {
+        const n = names[Math.floor(Math.random()*names.length)];
+        if (!used.has(n)) { picked.push(n); used.add(n); }
+    }
+    state.currentExercises = {};
+    picked.forEach(name => {
+        const type = EXERCISES[name];
+        const [min,max] = RANGES[type];
+        const val = min + (max-min)*(diff-1)/4;
+        if (type==="muscu"||type==="abdos") state.currentExercises[name] = `${Math.round(val)} reps`;
+        else if (type==="cardio") state.currentExercises[name] = `${Math.round(val)} sec`;
+        else state.currentExercises[name] = `${(Math.round(val*10)/10).toFixed(1)} km`;
+    });
+    renderExercises();
+    renderDailyBadge();
+}
+function renderExercises() {
+    document.getElementById('exercisesGrid').innerHTML = Object.entries(state.currentExercises).map(([name,val],i) =>
+        `<div class="exercise-row">
+            <span class="exercise-index">${String(i+1).padStart(2,'0')}</span>
+            <span class="exercise-name">${name}</span>
+            <span class="exercise-value">${val}</span>
+        </div>`).join('');
+}
+function renderDailyBadge() {
+    const d = state.dailyDifficulty;
+    const info = DAILY_RANK_INFO[d-1];
+    document.getElementById('questTitle').textContent = info.questTitle;
+    const badge = document.getElementById('dailyRankBadge');
+    badge.textContent = info.label;
+    badge.className = `rank-badge-letter ${info.badgeClass}`;
+    document.getElementById('dailyRankName').textContent = info.name;
+    document.getElementById('statDifficulty').textContent = `${info.name} (Diff. ${d})`;
+}
+function submitWorkout() {
+    const timeInput = parseFloat(document.getElementById('timeInput').value);
+    if (!timeInput || timeInput <= 0) { showToast('⚠ Renseigne un temps valide'); return; }
+    const diff = state.dailyDifficulty;
+    const timeRef = TIME_REF[diff];
+    const xpGained = Math.round(diff * 30 * timeRef / Math.max(timeInput, 1));
+    addXP(xpGained);
+    const el = document.getElementById('results');
+    document.getElementById('xpGainDisplay').textContent = `+${xpGained} XP`;
+    document.getElementById('xpGainedStat').textContent = xpGained;
+    document.getElementById('totalXPStat').textContent = state.xpTotal;
+    document.getElementById('levelStat').textContent = state.level;
+    el.classList.remove('hidden');
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+    generateExercises();
+}
+document.getElementById('submitBtn').addEventListener('click', submitWorkout);
+document.getElementById('generateBtn').addEventListener('click', () => {
+    generateExercises();
+    document.getElementById('results').classList.add('hidden');
+    showToast('Nouveaux exercices générés');
+});
+document.getElementById('resetBtn').addEventListener('click', () => {
+    if (confirm('Réinitialiser toute la progression ?')) {
+        state.level = 1; state.xpTotal = 0;
+        saveState(); updateAllUI();
+        document.getElementById('results').classList.add('hidden');
+        showToast('Système réinitialisé');
+    }
+});
+
+// ═══════════════════════════════════════════════════════════
+// POMODORO
+// ═══════════════════════════════════════════════════════════
+function selectDuration(min) {
+    if (timerRunning) return;
+    document.querySelectorAll('.dur-btn').forEach(b => {
+        b.classList.toggle('active', parseInt(b.dataset.min) === min);
+    });
+    timerDuration = min * 60;
+    timerRemaining = timerDuration;
+    updateTimerDisplay();
+    updateBonusDisplay();
+}
+
+function updateBonusDisplay() {
+    const min = timerDuration / 60;
+    const base = Math.round(min * (100/60));
+    const isLong = min >= 90;
+    const total = isLong ? Math.round(base * 1.3) : base;
+    document.getElementById('bonusBase').textContent = `+${base} XP`;
+    document.getElementById('bonusLongRow').style.display = isLong ? 'flex' : 'none';
+    document.getElementById('bonusTotal').textContent = `+${total} XP`;
+}
+
+function updateTimerDisplay() {
+    const m = Math.floor(timerRemaining/60);
+    const s = timerRemaining % 60;
+    document.getElementById('timerDisplay').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    const circumference = 2 * Math.PI * 90; // 565.48
+    const offset = circumference * (1 - timerRemaining/timerDuration);
+    document.getElementById('timerCircle').style.strokeDashoffset = offset;
+}
+
+function toggleTimer() {
+    if (timerRunning) {
+        clearInterval(timerInterval);
+        timerRunning = false;
+        document.getElementById('pomoStartBtn').textContent = '▶ Reprendre';
+        document.getElementById('timerStatusLabel').textContent = 'En pause';
+    } else {
+        timerRunning = true;
+        document.getElementById('pomoStartBtn').textContent = '⏸ Pause';
+        document.getElementById('timerStatusLabel').textContent = 'En cours...';
+        timerInterval = setInterval(() => {
+            timerRemaining--;
+            updateTimerDisplay();
+            if (timerRemaining <= 0) {
+                clearInterval(timerInterval);
+                timerRunning = false;
+                completeSession();
+            }
+        }, 1000);
+    }
+}
+
+function completeSession() {
+    playBeep();
+    const min = timerDuration / 60;
+    const base = Math.round(min * (100/60));
+    const xpGained = min >= 90 ? Math.round(base * 1.3) : base;
+    state.pomoSessions++;
+    state.pomoTotalMinutes += min;
+    state.pomoXpGained += xpGained;
+    state.pomoHistory.unshift({
+        min, xp: xpGained,
+        time: new Date().toLocaleTimeString('fr', {hour:'2-digit', minute:'2-digit'}),
+        date: new Date().toLocaleDateString('fr', {day:'2-digit', month:'short'})
+    });
+    if (state.pomoHistory.length > 10) state.pomoHistory.pop();
+    addXP(xpGained);
+    showToast(`⬡ Session terminée ! +${xpGained} XP`);
+    document.getElementById('pomoStartBtn').textContent = '▶ Démarrer';
+    document.getElementById('timerStatusLabel').textContent = 'Terminé !';
+    document.getElementById('timerSessionCount').textContent = `Session ${state.pomoSessions + 1}`;
+    timerRemaining = timerDuration;
+    updateTimerDisplay();
+    renderPomoHistory();
+}
+
+function resetTimer() {
+    clearInterval(timerInterval);
+    timerRunning = false;
+    timerRemaining = timerDuration;
+    updateTimerDisplay();
+    document.getElementById('pomoStartBtn').textContent = '▶ Démarrer';
+    document.getElementById('timerStatusLabel').textContent = 'Prêt';
+}
+
+function renderPomoHistory() {
+    const el = document.getElementById('pomoHistory');
+    if (!state.pomoHistory.length) {
+        el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-dim);font-size:0.8rem;letter-spacing:2px;">AUCUNE SESSION</div>';
+        return;
+    }
+    el.innerHTML = state.pomoHistory.map(s =>
+        `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(123,47,255,0.04);border:1px solid var(--border-faint);border-left:2px solid var(--purple-core);">
+            <span style="font-size:0.78rem;color:var(--text-mid);">${s.date} ${s.time}</span>
+            <span style="font-family:var(--font-title);font-size:0.8rem;color:var(--blue-ice);">${s.min}min</span>
+            <span style="font-family:var(--font-title);font-size:0.8rem;color:var(--success);">+${s.xp} XP</span>
+        </div>`
+    ).join('');
+}
+
+function resetPomoStats() {
+    if (!confirm('Réinitialiser les stats Focus ?')) return;
+    state.pomoSessions = 0; state.pomoTotalMinutes = 0;
+    state.pomoXpGained = 0; state.pomoHistory = [];
+    saveState(); updateAllUI(); renderPomoHistory();
+    showToast('Stats Focus réinitialisées');
+}
+
+function playBeep() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [0, 0.3, 0.6].forEach(delay => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.frequency.value = 880;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.4, ctx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.3);
+            osc.start(ctx.currentTime + delay);
+            osc.stop(ctx.currentTime + delay + 0.3);
+        });
+    } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════
+// TODO
+// ═══════════════════════════════════════════════════════════
+function addTodo() {
+    const input = document.getElementById('todoInput');
+    const text = input.value.trim();
+    if (!text) { showToast('⚠ Écris une mission avant d\'ajouter'); return; }
+    const xp = parseInt(document.getElementById('todoXpSelect').value);
+    state.todos.push({ id: Date.now(), text, xp, status: 'pending' });
+    input.value = '';
+    saveState();
+    renderTodos();
+    showToast('Mission ajoutée');
+}
+
+function completeTodo(id) {
+    const todo = state.todos.find(t => t.id === id);
+    if (!todo || todo.status !== 'pending') return;
+    todo.status = 'done';
+    state.todoSucc++;
+    state.streak++;
+    addXP(todo.xp);
+    showToast(`⬡ Mission accomplie ! +${todo.xp} XP`);
+    saveState();
+    renderTodos();
+    updateTodoStats();
+}
+
+function failTodo(id) {
+    const todo = state.todos.find(t => t.id === id);
+    if (!todo || todo.status !== 'pending') return;
+    todo.status = 'failed';
+    state.todoFail++;
+    state.streak = 0;
+    saveState();
+    renderTodos();
+    updateTodoStats();
+    showToast('Mission échouée.');
+}
+
+function deleteTodo(id) {
+    state.todos = state.todos.filter(t => t.id !== id);
+    saveState();
+    renderTodos();
+}
+
+function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTodos();
+}
+
+function renderTodos() {
+    const list = document.getElementById('todoList');
+    let filtered = state.todos;
+    if (currentFilter === 'pending') filtered = filtered.filter(t => t.status === 'pending');
+    else if (currentFilter === 'done') filtered = filtered.filter(t => t.status === 'done');
+    else if (currentFilter === 'failed') filtered = filtered.filter(t => t.status === 'failed');
+
+    if (!filtered.length) {
+        list.innerHTML = '<div class="todo-empty">Aucune mission ici</div>';
+        return;
+    }
+
+    list.innerHTML = filtered.map(todo => {
+        const isPending = todo.status === 'pending';
+        const isDone = todo.status === 'done';
+        const isFailed = todo.status === 'failed';
+        const checkIcon = isDone ? '✓' : isFailed ? '✗' : '';
+        const checkClass = isDone ? 'done' : isFailed ? 'failed' : '';
+        return `<div class="todo-item ${isDone?'done':''} ${isFailed?'failed':''}">
+            <div class="todo-check ${checkClass}" onclick="${isPending?`completeTodo(${todo.id})`:''}" title="${isPending?'Marquer comme réussie':''}">
+                ${checkIcon}
+            </div>
+            <span class="todo-text">${todo.text}</span>
+            <span class="todo-xp-badge">+${todo.xp} XP</span>
+            ${isPending ? `<button class="todo-fail-btn" onclick="failTodo(${todo.id})">✗ Raté</button>` : ''}
+            <button class="todo-delete-btn" onclick="deleteTodo(${todo.id})">🗑</button>
+        </div>`;
+    }).join('');
+}
+
+function updateTodoStats() {
+    document.getElementById('tsSucc').textContent = state.todoSucc;
+    document.getElementById('tsFail').textContent = state.todoFail;
+    const total = state.todoSucc + state.todoFail;
+    document.getElementById('tsRate').textContent = total > 0 ? Math.round(state.todoSucc/total*100)+'%' : '—';
+    document.getElementById('tsStreak').textContent = `🔥 ${state.streak}`;
+}
+
+function clearCompletedTodos() {
+    if (!confirm('Effacer toutes les missions complétées et échouées ?')) return;
+    state.todos = state.todos.filter(t => t.status === 'pending');
+    saveState(); renderTodos(); showToast('Liste nettoyée');
+}
+
+// ═══════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════
+function showToast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast'; t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 2800);
+}
+
+// ═══════════════════════════════════════════════════════════
+// PARTICLES
+// ═══════════════════════════════════════════════════════════
+function spawnParticles() {
+    const container = document.getElementById('particles');
+    for (let i=0; i<25; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random()*100+'vw';
+        p.style.animationDuration = (8+Math.random()*12)+'s';
+        p.style.animationDelay = (Math.random()*15)+'s';
+        p.style.opacity = Math.random()*0.5;
+        p.style.width = p.style.height = (1+Math.random()*2)+'px';
+        container.appendChild(p);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+function init() {
+    loadState();
+    generateExercises();
+    updateAllUI();
+    updateTimerDisplay();
+    updateBonusDisplay();
+    renderTodos();
+    renderPomoHistory();
+    spawnParticles();
+}
+init();
+</script>
+</body>
+</html>
