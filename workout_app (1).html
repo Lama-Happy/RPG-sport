@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo Training System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-deep: #030508;
+            --bg-dark: #060b14;
+            --bg-panel: rgba(8, 12, 28, 0.85);
+            --purple-core: #7b2fff;
+            --purple-glow: #a855f7;
+            --purple-dim: #4c1d95;
+            --blue-ice: #38bdf8;
+            --blue-dim: #0c4a6e;
+            --gold: #fbbf24;
+            --gold-dim: #78350f;
+            --text-bright: #e2e8f0;
+            --text-mid: #94a3b8;
+            --text-dim: #475569;
+            --success: #34d399;
+            --danger: #f87171;
+            --border-faint: rgba(123, 47, 255, 0.2);
+            --border-glow: rgba(123, 47, 255, 0.6);
+            --font-title: 'Cinzel', serif;
+            --font-body: 'Rajdhani', sans-serif;
+        }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--text-bright);
+            font-family: var(--font-body);
+            font-size: 16px;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ── ANIMATED BACKGROUND ── */
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(123,47,255,0.18) 0%, transparent 70%),
+                radial-gradient(ellipse 40% 30% at 90% 90%, rgba(56,189,248,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 30% 20% at 10% 80%, rgba(123,47,255,0.06) 0%, transparent 60%);
+            pointer-events: none; z-index: 0;
+            animation: bgPulse 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes bgPulse {
+            0% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* Rune grid overlay */
+        body::after {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                linear-gradient(rgba(123,47,255,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(123,47,255,0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none; z-index: 0;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 30px 20px 60px;
+            position: relative; z-index: 1;
+        }
+
+        /* ── HEADER ── */
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            position: relative;
+        }
+
+        .system-notice {
+            font-family: var(--font-title);
+            font-size: 0.72rem;
+            letter-spacing: 6px;
+            color: var(--purple-glow);
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            opacity: 0.8;
+            animation: flicker 4s infinite;
+        }
+
+        @keyframes flicker {
+            0%,95%,100% { opacity: 0.8; }
+            96% { opacity: 0.3; }
+            97% { opacity: 0.9; }
+            98% { opacity: 0.4; }
+        }
+
+        h1 {
+            font-family: var(--font-title);
+            font-size: clamp(1.8rem, 5vw, 3rem);
+            font-weight: 900;
+            letter-spacing: 3px;
+            color: #fff;
+            text-shadow:
+                0 0 20px rgba(123,47,255,0.8),
+                0 0 60px rgba(123,47,255,0.4),
+                0 0 100px rgba(123,47,255,0.2);
+            margin-bottom: 8px;
+            line-height: 1.1;
+        }
+
+        h1 span { color: var(--purple-glow); }
+
+        .subtitle {
+            color: var(--text-mid);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+
+        /* Decorative line */
+        .header-line {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-top: 24px;
+        }
+        .header-line::before, .header-line::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--purple-core), transparent);
+        }
+        .rune-diamond {
+            width: 8px; height: 8px;
+            background: var(--purple-glow);
+            transform: rotate(45deg);
+            box-shadow: 0 0 10px var(--purple-glow);
+        }
+
+        /* ── RANK BANNER ── */
+        .rank-banner {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-faint);
+            border-top: 2px solid var(--purple-core);
+            padding: 24px 30px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+            backdrop-filter: blur(12px);
+        }
+
+        .rank-banner::before {
+            content: '';
+            position: absolute;
+            top: -100%; left: -100%;
+            width: 300%; height: 300%;
+            background: conic-gradient(from 0deg, transparent 0%, rgba(123,47,255,0.03) 25%, transparent 50%);
+            animation: rotateBg 20s linear infinite;
+        }
+
+        @keyframes rotateBg {
+            to { transform: rotate(360deg); }
+        }
+
+        .rank-grid {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 24px;
+            align-items: center;
+            position: relative;
+        }
+
+        .rank-emblem {
+            width: 70px; height: 70px;
+            border: 2px solid var(--purple-core);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: linear-gradient(135deg, rgba(123,47,255,0.3), rgba(56,189,248,0.1));
+            animation: emblemPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes emblemPulse {
+            0%,100% { box-shadow: 0 0 15px rgba(123,47,255,0.4); }
+            50% { box-shadow: 0 0 30px rgba(123,47,255,0.8), 0 0 60px rgba(123,47,255,0.3); }
+        }
+
+        .rank-letter {
+            font-family: var(--font-title);
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: var(--purple-glow);
+            text-shadow: 0 0 20px var(--purple-glow);
+        }
+
+        .rank-info { }
+        .rank-title-label {
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .rank-name {
+            font-family: var(--font-title);
+            font-size: 1.3rem;
+            color: #fff;
+            margin-bottom: 6px;
+        }
+        .rank-sub {
+            font-size: 0.82rem;
+            color: var(--text-mid);
+        }
+
+        .rank-level-display {
+            text-align: right;
+        }
+        .rank-lv-label {
+            font-size: 0.65rem;
+            letter-spacing: 3px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .rank-lv-number {
+            font-family: var(--font-title);
+            font-size: 2.8rem;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--purple-glow);
+            text-shadow: 0 0 20px rgba(168,85,247,0.8);
+        }
+
+        /* ── XP BAR ── */
+        .xp-section {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-faint);
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(12px);
+            clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+        }
+
+        .xp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .xp-label {
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .xp-values {
+            font-size: 0.85rem;
+            color: var(--purple-glow);
+            font-weight: 600;
+        }
+
+        .xp-bar-track {
+            width: 100%;
+            height: 8px;
+            background: rgba(123,47,255,0.1);
+            border: 1px solid rgba(123,47,255,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .xp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--purple-dim), var(--purple-glow), var(--blue-ice));
+            transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+            position: relative;
+        }
+
+        .xp-bar-fill::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: xpShimmer 2.5s infinite;
+        }
+
+        @keyframes xpShimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .xp-total-line {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.78rem;
+            color: var(--text-dim);
+        }
+
+        /* ── DAILY QUEST ── */
+        .daily-quest-section {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-faint);
+            border-left: 3px solid var(--purple-core);
+            padding: 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(12px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quest-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .quest-title-group { }
+        .quest-eyebrow {
+            font-size: 0.65rem;
+            letter-spacing: 4px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .quest-title {
+            font-family: var(--font-title);
+            font-size: 1.1rem;
+            color: #fff;
+        }
+
+        .daily-rank-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .rank-badge-letter {
+            font-family: var(--font-title);
+            font-size: 1.4rem;
+            font-weight: 900;
+            padding: 6px 14px;
+            border: 1px solid;
+            letter-spacing: 2px;
+        }
+
+        .rank-badge-name {
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        /* rank colors */
+        .rank-E { color: var(--text-mid); border-color: var(--text-mid); background: rgba(148,163,184,0.08); }
+        .rank-D { color: #60a5fa; border-color: #60a5fa; background: rgba(96,165,250,0.08); }
+        .rank-C { color: var(--success); border-color: var(--success); background: rgba(52,211,153,0.08); }
+        .rank-B { color: var(--gold); border-color: var(--gold); background: rgba(251,191,36,0.08); }
+        .rank-A { color: #f97316; border-color: #f97316; background: rgba(249,115,22,0.08); text-shadow: 0 0 10px rgba(249,115,22,0.6); }
+        .rank-S {
+            color: var(--purple-glow);
+            border-color: var(--purple-glow);
+            background: rgba(168,85,247,0.12);
+            text-shadow: 0 0 15px rgba(168,85,247,0.9);
+            box-shadow: 0 0 20px rgba(168,85,247,0.3);
+        }
+
+        .quest-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-faint), transparent);
+            margin-bottom: 16px;
+        }
+
+        /* ── EXERCISE LIST ── */
+        .exercises-list {
+            display: grid;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .exercise-row {
+            display: grid;
+            grid-template-columns: 28px 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(123,47,255,0.04);
+            border: 1px solid var(--border-faint);
+            border-left: 2px solid var(--purple-core);
+            transition: all 0.2s ease;
+            animation: rowIn 0.4s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateX(-15px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .exercise-row:nth-child(1) { animation-delay: 0.05s; }
+        .exercise-row:nth-child(2) { animation-delay: 0.1s; }
+        .exercise-row:nth-child(3) { animation-delay: 0.15s; }
+        .exercise-row:nth-child(4) { animation-delay: 0.2s; }
+        .exercise-row:nth-child(5) { animation-delay: 0.25s; }
+
+        .exercise-row:hover {
+            background: rgba(123,47,255,0.1);
+            border-color: rgba(123,47,255,0.5);
+        }
+
+        .exercise-index {
+            font-size: 0.7rem;
+            color: var(--purple-glow);
+            font-weight: 700;
+            opacity: 0.7;
+            text-align: center;
+        }
+
+        .exercise-name {
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+            color: var(--text-bright);
+        }
+
+        .exercise-value {
+            font-family: var(--font-title);
+            font-size: 0.92rem;
+            color: var(--blue-ice);
+            font-weight: 700;
+            white-space: nowrap;
+            text-shadow: 0 0 8px rgba(56,189,248,0.5);
+        }
+
+        /* ── TIME INPUT ── */
+        .time-block {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            flex: 1;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.65rem;
+            letter-spacing: 3px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 13px 16px;
+            background: rgba(123,47,255,0.06);
+            border: 1px solid rgba(123,47,255,0.25);
+            border-bottom: 2px solid var(--purple-core);
+            color: var(--text-bright);
+            font-family: var(--font-body);
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        input[type="number"]:focus {
+            background: rgba(123,47,255,0.12);
+            border-color: var(--purple-glow);
+            box-shadow: 0 0 20px rgba(123,47,255,0.2);
+        }
+
+        /* ── BUTTONS ── */
+        .btn-group { display: flex; gap: 10px; }
+
+        .btn {
+            padding: 13px 20px;
+            font-family: var(--font-title);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.4s ease;
+        }
+
+        .btn:hover::before { transform: translateX(100%); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--purple-dim), var(--purple-core));
+            color: #fff;
+            flex: 1;
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+            box-shadow: 0 0 20px rgba(123,47,255,0.3);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px rgba(123,47,255,0.6), 0 0 60px rgba(123,47,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-mid);
+            border: 1px solid rgba(123,47,255,0.25);
+            clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+        }
+
+        .btn-secondary:hover {
+            color: var(--purple-glow);
+            border-color: var(--purple-glow);
+            box-shadow: 0 0 15px rgba(123,47,255,0.2);
+        }
+
+        /* ── RESULTS PANEL ── */
+        .results-panel {
+            background: var(--bg-panel);
+            border: 1px solid rgba(123,47,255,0.4);
+            border-top: 2px solid var(--purple-glow);
+            padding: 28px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+            animation: resultPopIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+        }
+
+        @keyframes resultPopIn {
+            from { opacity: 0; transform: scale(0.96) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .results-panel.hidden { display: none; }
+
+        /* pulsing portal bg */
+        .results-panel::before {
+            content: '';
+            position: absolute;
+            width: 300px; height: 300px;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            background: radial-gradient(circle, rgba(123,47,255,0.12) 0%, transparent 70%);
+            animation: portalPulse 2s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes portalPulse {
+            0%,100% { transform: translate(-50%,-50%) scale(1); opacity: 0.5; }
+            50% { transform: translate(-50%,-50%) scale(1.3); opacity: 1; }
+        }
+
+        .results-header {
+            text-align: center;
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .results-eyebrow {
+            font-size: 0.65rem;
+            letter-spacing: 5px;
+            color: var(--purple-glow);
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 6px;
+            animation: flicker 3s infinite;
+        }
+
+        .results-title {
+            font-family: var(--font-title);
+            font-size: 1.4rem;
+            color: #fff;
+        }
+
+        .xp-gain-big {
+            font-family: var(--font-title);
+            font-size: 3rem;
+            color: var(--purple-glow);
+            text-shadow: 0 0 30px rgba(168,85,247,1), 0 0 60px rgba(168,85,247,0.5);
+            text-align: center;
+            margin: 16px 0;
+            animation: xpGlow 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes xpGlow {
+            from { text-shadow: 0 0 20px rgba(168,85,247,0.8); }
+            to { text-shadow: 0 0 40px rgba(168,85,247,1), 0 0 80px rgba(168,85,247,0.4); }
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--border-faint);
+            border: 1px solid var(--border-faint);
+            position: relative;
+        }
+
+        .result-stat-item {
+            background: var(--bg-panel);
+            padding: 14px;
+            text-align: center;
+        }
+
+        .rs-label {
+            font-size: 0.65rem;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .rs-value {
+            font-family: var(--font-title);
+            font-size: 1.2rem;
+            color: var(--purple-glow);
+        }
+
+        /* ── STATS FOOTER ── */
+        .stats-footer {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-faint);
+            padding: 22px 24px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(12px);
+            clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%);
+        }
+
+        .stats-footer-title {
+            font-size: 0.65rem;
+            letter-spacing: 4px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: rgba(123,47,255,0.04);
+            border: 1px solid var(--border-faint);
+        }
+
+        .stats-item-label {
+            font-size: 0.78rem;
+            color: var(--text-mid);
+            letter-spacing: 0.5px;
+        }
+
+        .stats-item-value {
+            font-family: var(--font-title);
+            color: var(--purple-glow);
+            font-size: 1rem;
+        }
+
+        /* ── DATA CONTROLS ── */
+        .data-controls {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-faint);
+            margin-top: 40px;
+        }
+
+        .data-controls p {
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 14px;
+        }
+
+        .btn-danger {
+            background: rgba(248,113,113,0.08);
+            color: var(--danger);
+            border: 1px solid rgba(248,113,113,0.3);
+            padding: 10px 20px;
+            font-family: var(--font-title);
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-danger:hover {
+            background: rgba(248,113,113,0.15);
+            box-shadow: 0 0 15px rgba(248,113,113,0.2);
+        }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed;
+            bottom: 24px; right: 24px;
+            background: rgba(8,12,28,0.95);
+            border: 1px solid var(--purple-core);
+            border-left: 3px solid var(--purple-glow);
+            color: var(--text-bright);
+            padding: 14px 20px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            animation: toastIn 0.3s ease;
+            z-index: 1000;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 0 20px rgba(123,47,255,0.3);
+        }
+
+        @keyframes toastIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 600px) {
+            .rank-grid { grid-template-columns: auto 1fr; }
+            .rank-level-display { display: none; }
+            .result-stats { grid-template-columns: 1fr; }
+            .stats-row { grid-template-columns: 1fr; }
+            .btn-group { flex-direction: column; }
+        }
+
+        /* ── PARTICLE DOTS ── */
+        .particles {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px; height: 2px;
+            background: var(--purple-glow);
+            border-radius: 50%;
+            animation: floatUp linear infinite;
+            opacity: 0;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.3; }
+            100% { transform: translateY(-10px) translateX(30px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Floating particles -->
+<div class="particles" id="particles"></div>
+
+<div class="container">
+
+    <header>
+        <div class="system-notice">⬡ System Notification ⬡</div>
+        <h1>SOLO <span>TRAINING</span></h1>
+        <p class="subtitle">Daily Quest System — Arise, Hunter</p>
+        <div class="header-line"><div class="rune-diamond"></div></div>
+    </header>
+
+    <!-- Rank banner -->
+    <div class="rank-banner">
+        <div class="rank-grid">
+            <div class="rank-emblem">
+                <span class="rank-letter" id="rankLetter">E</span>
+            </div>
+            <div class="rank-info">
+                <div class="rank-title-label">Hunter Rank</div>
+                <div class="rank-name" id="rankName">Rang E — Débutant</div>
+                <div class="rank-sub" id="rankSub">Commence ton entraînement, Hunter</div>
+            </div>
+            <div class="rank-level-display">
+                <span class="rank-lv-label">LV</span>
+                <div class="rank-lv-number" id="currentLevel">1</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- XP bar -->
+    <div class="xp-section">
+        <div class="xp-header">
+            <span class="xp-label">Expérience</span>
+            <span class="xp-values" id="xpProgress">0 / 200 XP</span>
+        </div>
+        <div class="xp-bar-track">
+            <div class="xp-bar-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <div class="xp-total-line">
+            <span>Progression palier</span>
+            <span id="progressPercent">0%</span>
+        </div>
+    </div>
+
+    <!-- Daily Quest -->
+    <div class="daily-quest-section">
+        <div class="quest-header">
+            <div class="quest-title-group">
+                <div class="quest-eyebrow">Quête Quotidienne</div>
+                <div class="quest-title" id="questTitle">Chargement...</div>
+            </div>
+            <div class="daily-rank-badge">
+                <div class="rank-badge-letter rank-E" id="dailyRankBadge">E</div>
+                <div class="rank-badge-name" id="dailyRankName">Rang E</div>
+            </div>
+        </div>
+
+        <div class="quest-divider"></div>
+
+        <div class="exercises-list" id="exercisesGrid"></div>
+
+        <div class="time-block">
+            <div class="input-group">
+                <label class="input-label">⏱ Temps de Séance (minutes)</label>
+                <input type="number" id="timeInput" placeholder="30" min="0.1" step="0.1" value="30">
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn btn-primary" id="submitBtn">▶ Valider la Quête</button>
+            <button class="btn btn-secondary" id="generateBtn">↺ Regénérer</button>
+        </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-panel hidden" id="results">
+        <div class="results-header">
+            <span class="results-eyebrow">⬡ Quête Accomplie ⬡</span>
+            <div class="results-title">Expérience Acquise</div>
+        </div>
+        <div class="xp-gain-big" id="xpGainDisplay">+0 XP</div>
+        <div class="result-stats">
+            <div class="result-stat-item">
+                <span class="rs-label">XP Gagné</span>
+                <span class="rs-value" id="xpGainedStat">0</span>
+            </div>
+            <div class="result-stat-item">
+                <span class="rs-label">XP Total</span>
+                <span class="rs-value" id="totalXPStat">0</span>
+            </div>
+            <div class="result-stat-item">
+                <span class="rs-label">Niveau</span>
+                <span class="rs-value" id="levelStat">1</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats summary -->
+    <div class="stats-footer">
+        <div class="stats-footer-title">— Statistiques du Hunter —</div>
+        <div class="stats-row">
+            <div class="stats-item">
+                <span class="stats-item-label">Niveau actuel</span>
+                <span class="stats-item-value" id="statLevel">1</span>
+            </div>
+            <div class="stats-item">
+                <span class="stats-item-label">XP Total</span>
+                <span class="stats-item-value" id="totalXP">0</span>
+            </div>
+            <div class="stats-item">
+                <span class="stats-item-label">Difficulté du jour</span>
+                <span class="stats-item-value" id="statDifficulty">—</span>
+            </div>
+            <div class="stats-item">
+                <span class="stats-item-label">Rang Hunter</span>
+                <span class="stats-item-value" id="statRank">E</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-controls">
+        <p>Données sauvegardées localement</p>
+        <button class="btn-danger" id="resetBtn">⚠ Réinitialiser le Système</button>
+    </div>
+
+</div>
+
+<script>
+    // ── DATA ──
+    const EXERCISES = {
+        "Pompes":           "muscu",
+        "Squats":           "muscu",
+        "Fentes":           "muscu",
+        "Dips sur chaise":  "muscu",
+        "Tractions":        "muscu",
+        "Jumping squats":   "muscu",
+        "Course":           "course",
+        "Chaise murale":    "cardio",
+        "Gainage":          "cardio",
+        "Montées de genoux":"cardio",
+        "Burpees":          "cardio",
+        "Russian twist":    "abdos",
+        "Crunchs":          "abdos",
+        "Planche latérale": "abdos",
+        "Mountain climbers":"abdos"
+    };
+
+    const RANGES = {
+        muscu:  [50, 150],
+        abdos:  [50, 150],
+        cardio: [30, 120],
+        course: [2.5, 15]
+    };
+
+    const TIME_REF = { 1: 120, 2: 90, 3: 60, 4: 40, 5: 20 };
+
+    // Solo Leveling ranks
+    const RANKS = [
+        { min: 1,  max: 5,   letter: "E", name: "Rang E — Débutant",       sub: "Commence ton entraînement, Hunter",        badgeClass: "rank-E" },
+        { min: 6,  max: 12,  letter: "D", name: "Rang D — Apprenti",       sub: "Tu montres du potentiel",                  badgeClass: "rank-D" },
+        { min: 13, max: 22,  letter: "C", name: "Rang C — Initié",         sub: "Les portails s'ouvrent devant toi",        badgeClass: "rank-C" },
+        { min: 23, max: 35,  letter: "B", name: "Rang B — Chasseur",       sub: "Tu maîtrises les donjons intermédiaires",  badgeClass: "rank-B" },
+        { min: 36, max: 50,  letter: "A", name: "Rang A — Élite",          sub: "Peu osent te défier",                      badgeClass: "rank-A" },
+        { min: 51, max: 999, letter: "S", name: "Rang S — Monarche",       sub: "Tu es dans une autre dimension",           badgeClass: "rank-S" },
+    ];
+
+    // Daily difficulty levels (1–5) based on day of year
+    const DAILY_RANK_INFO = [
+        { diff: 1, label: "E", name: "Rang E", badgeClass: "rank-E", questTitle: "Quête de l'Éveil — Dungeon de Bronze" },
+        { diff: 2, label: "D", name: "Rang D", badgeClass: "rank-D", questTitle: "Quête de l'Initiation — Portail de Pierre" },
+        { diff: 3, label: "C", name: "Rang C", badgeClass: "rank-C", questTitle: "Quête de l'Épreuve — Donjon des Ombres" },
+        { diff: 4, label: "B", name: "Rang B", badgeClass: "rank-B", questTitle: "Quête du Chasseur — Portail de Fer" },
+        { diff: 5, label: "S", name: "Rang S", badgeClass: "rank-S", questTitle: "Quête Monarchique — Dungeon Abyssal" },
+    ];
+
+    function getDailyDifficulty() {
+        const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+        // Cycle through a pattern: E D C B A S E D C B... (avoids pure modulo repeat feel)
+        const pattern = [1, 2, 1, 3, 2, 1, 4, 2, 3, 1, 5, 2, 3, 4, 1, 2, 5, 3, 2, 4];
+        return pattern[dayOfYear % pattern.length];
+    }
+
+    // ── STATE ──
+    let state = {
+        level: 1,
+        xpTotal: 0,
+        dailyDifficulty: getDailyDifficulty(),
+        currentExercises: {}
+    };
+
+    // ── INIT ──
+    function init() {
+        loadProgress();
+        generateExercises();
+        setupEventListeners();
+        updateUI();
+        spawnParticles();
+    }
+
+    function loadProgress() {
+        const saved = localStorage.getItem('soloTrainingProgress');
+        if (saved) {
+            const data = JSON.parse(saved);
+            state.level = data.level || 1;
+            state.xpTotal = data.xpTotal || 0;
+        }
+    }
+
+    function saveProgress() {
+        localStorage.setItem('soloTrainingProgress', JSON.stringify({
+            level: state.level,
+            xpTotal: state.xpTotal
+        }));
+    }
+
+    // ── EXERCISES ──
+    function generateExercises() {
+        const diff = state.dailyDifficulty;
+        const names = Object.keys(EXERCISES);
+        const picked = [];
+        const used = new Set();
+        while (picked.length < 5) {
+            const n = names[Math.floor(Math.random() * names.length)];
+            if (!used.has(n)) { picked.push(n); used.add(n); }
+        }
+
+        state.currentExercises = {};
+        picked.forEach(name => {
+            const type = EXERCISES[name];
+            const [min, max] = RANGES[type];
+            const val = min + (max - min) * (diff - 1) / 4;
+            if (type === "muscu" || type === "abdos") {
+                state.currentExercises[name] = `${Math.round(val)} reps`;
+            } else if (type === "cardio") {
+                state.currentExercises[name] = `${Math.round(val)} sec`;
+            } else {
+                state.currentExercises[name] = `${(Math.round(val * 10) / 10).toFixed(1)} km`;
+            }
+        });
+
+        renderExercises();
+        renderDailyBadge();
+    }
+
+    function renderExercises() {
+        const grid = document.getElementById('exercisesGrid');
+        grid.innerHTML = Object.entries(state.currentExercises).map(([name, val], i) =>
+            `<div class="exercise-row">
+                <span class="exercise-index">${String(i+1).padStart(2,'0')}</span>
+                <span class="exercise-name">${name}</span>
+                <span class="exercise-value">${val}</span>
+            </div>`
+        ).join('');
+    }
+
+    function renderDailyBadge() {
+        const d = state.dailyDifficulty;
+        const info = DAILY_RANK_INFO[d - 1];
+        document.getElementById('questTitle').textContent = info.questTitle;
+        const badge = document.getElementById('dailyRankBadge');
+        badge.textContent = info.label;
+        badge.className = `rank-badge-letter ${info.badgeClass}`;
+        document.getElementById('dailyRankName').textContent = info.name;
+        document.getElementById('statDifficulty').textContent = `${info.name} (Diff. ${d})`;
+    }
+
+    // ── SUBMIT ──
+    function submitWorkout() {
+        const timeInput = parseFloat(document.getElementById('timeInput').value);
+        if (!timeInput || timeInput <= 0) { showToast('⚠ Renseigne un temps valide'); return; }
+
+        const diff = state.dailyDifficulty;
+        const timeRef = TIME_REF[diff];
+        const xpGained = Math.round(diff * 30 * timeRef / Math.max(timeInput, 1));
+
+        let newXpTotal = state.xpTotal + xpGained;
+        let newLevel = state.level;
+
+        let cumul = 0;
+        for (let i = 1; i < newLevel; i++) cumul += 200 + 50 * (i - 1);
+        let xpInLevel = newXpTotal - cumul;
+        let threshold = 200 + 50 * (newLevel - 1);
+
+        while (xpInLevel >= threshold) {
+            xpInLevel -= threshold;
+            newLevel++;
+            threshold = 200 + 50 * (newLevel - 1);
+        }
+
+        state.level = newLevel;
+        state.xpTotal = newXpTotal;
+        saveProgress();
+
+        showResults(xpGained);
+        updateUI();
+        generateExercises();
+    }
+
+    function showResults(xpGained) {
+        const el = document.getElementById('results');
+        document.getElementById('xpGainDisplay').textContent = `+${xpGained} XP`;
+        document.getElementById('xpGainedStat').textContent = xpGained;
+        document.getElementById('totalXPStat').textContent = state.xpTotal;
+        document.getElementById('levelStat').textContent = state.level;
+        el.classList.remove('hidden');
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ── UI UPDATE ──
+    function updateUI() {
+        const level = state.level;
+        document.getElementById('currentLevel').textContent = level;
+        document.getElementById('statLevel').textContent = level;
+        document.getElementById('totalXP').textContent = state.xpTotal;
+
+        // Rank
+        const rankData = RANKS.find(r => level >= r.min && level <= r.max) || RANKS[RANKS.length - 1];
+        document.getElementById('rankLetter').textContent = rankData.letter;
+        document.getElementById('rankName').textContent = rankData.name;
+        document.getElementById('rankSub').textContent = rankData.sub;
+        document.getElementById('statRank').textContent = rankData.letter;
+
+        // XP progress
+        const threshold = 200 + 50 * (level - 1);
+        let cumul = 0;
+        for (let i = 1; i < level; i++) cumul += 200 + 50 * (i - 1);
+        const xpInLevel = state.xpTotal - cumul;
+        const pct = Math.max(0, Math.min(1, xpInLevel / threshold));
+
+        document.getElementById('progressFill').style.width = (pct * 100) + '%';
+        document.getElementById('progressPercent').textContent = Math.round(pct * 100) + '%';
+        document.getElementById('xpProgress').textContent = `${Math.floor(xpInLevel)} / ${threshold} XP`;
+    }
+
+    // ── EVENTS ──
+    function setupEventListeners() {
+        document.getElementById('submitBtn').addEventListener('click', submitWorkout);
+        document.getElementById('generateBtn').addEventListener('click', () => {
+            generateExercises();
+            document.getElementById('results').classList.add('hidden');
+            showToast('Nouveaux exercices générés');
+        });
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            if (confirm('Réinitialiser toute la progression ? Cette action est irréversible.')) {
+                localStorage.removeItem('soloTrainingProgress');
+                state.level = 1;
+                state.xpTotal = 0;
+                updateUI();
+                document.getElementById('results').classList.add('hidden');
+                showToast('Système réinitialisé');
+            }
+        });
+    }
+
+    // ── TOAST ──
+    function showToast(msg) {
+        const t = document.createElement('div');
+        t.className = 'toast';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 2500);
+    }
+
+    // ── PARTICLES ──
+    function spawnParticles() {
+        const container = document.getElementById('particles');
+        for (let i = 0; i < 25; i++) {
+            const p = document.createElement('div');
+            p.className = 'particle';
+            p.style.left = Math.random() * 100 + 'vw';
+            p.style.animationDuration = (8 + Math.random() * 12) + 's';
+            p.style.animationDelay = (Math.random() * 15) + 's';
+            p.style.opacity = Math.random() * 0.5;
+            p.style.width = p.style.height = (1 + Math.random() * 2) + 'px';
+            container.appendChild(p);
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
